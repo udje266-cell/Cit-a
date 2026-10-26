@@ -10,6 +10,7 @@ const PlanetView = preload("res://game/planet_view.gd")
 const UI = preload("res://game/ui.gd")
 const FounderScreen = preload("res://game/founder_screen.gd")
 const Audio = preload("res://game/audio.gd")
+const I18n = preload("res://game/i18n.gd")
 
 const TUTORIAL := [
 	"Tournez la planète : glissez un doigt (ou le bouton gauche de la souris). Zoomez : pincez (ou molette).",
@@ -46,6 +47,7 @@ var _tuto_timer := 0.0
 
 func _ready() -> void:
 	cat = Catalog.shared()
+	I18n.apply(I18n.saved_locale(), cat)
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_COLOR
@@ -109,7 +111,7 @@ func new_world(seed_text: String, subdivisions: int = -1) -> void:
 	world = World.new(cat)
 	world.create_planet(s, subdivisions)
 	world.set_meta("rivals", 2 if world.planet.cell_count <= 2562 else 4)
-	world.world_name = "Monde %d" % s
+	world.world_name = tr("Monde %d") % s
 	world_id = SaveSystem.new_world_id()
 	_start_founders()
 
@@ -178,7 +180,7 @@ func pick_import_file() -> void:
 func _import_external(path: String) -> void:
 	var local := SaveSystem.copy_into_exports(path)
 	if local == "":
-		ui.show_message("Import impossible", ["Le fichier « %s » n'a pas pu être lu." % path.get_file()])
+		ui.show_message("Import impossible", [tr("Le fichier « %s » n'a pas pu être lu.") % path.get_file()])
 		return
 	import_world(local)
 
@@ -189,7 +191,7 @@ func export_to_device(kind: String) -> void:
 		ui.show_message("Export", ["Échec de l'export."])
 		return
 	var save := func(dest: String):
-		var msg := "Copie enregistrée : %s" % dest if SaveSystem.copy_file(path, dest) else "Impossible d'écrire à cet endroit : %s" % dest
+		var msg := tr("Copie enregistrée : %s") % dest if SaveSystem.copy_file(path, dest) else tr("Impossible d'écrire à cet endroit : %s") % dest
 		ui.show_message("Export", [msg])
 	if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_FILE):
 		DisplayServer.file_dialog_show("Enregistrer le monde", OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS), path.get_file(), false,
@@ -208,6 +210,12 @@ func export_to_device(kind: String) -> void:
 		dlg.canceled.connect(dlg.queue_free)
 		ui.add_child(dlg)
 		dlg.popup_centered_ratio(0.8)
+
+## Changement de langue : immédiat pour l'interface et le catalogue.
+func set_language(locale: String) -> void:
+	I18n.apply(locale, cat)
+	I18n.save_locale(locale)
+	ui.mark_dirty()
 
 func import_world(path: String) -> void:
 	var r := SaveSystem.import_file(path)
@@ -261,7 +269,7 @@ func _process_catchup() -> void:
 	for i in mini(per_frame, _catchup_left):
 		world.tick()
 	_catchup_left -= mini(per_frame, _catchup_left)
-	ui.refresh_hud(speed, "Pendant votre absence… encore %d ans à simuler" % _catchup_left)
+	ui.refresh_hud(speed, tr("Pendant votre absence… encore %d ans à simuler") % _catchup_left)
 	if _catchup_left <= 0:
 		state = "play"
 		view.refresh(true)
@@ -537,8 +545,8 @@ func _update_tutorial() -> void:
 		ui.set_tutorial("")
 		return
 	var st := tutorial_step()
-	var pause_note := "\n(Le temps est en pause pendant l'apprentissage.)" if speed == 0 else ""
-	ui.set_tutorial("Tutoriel %d/%d — %s%s" % [st + 1, TUTORIAL.size(), TUTORIAL[st], pause_note], st)
+	var pause_note := "\n" + tr("(Le temps est en pause pendant l'apprentissage.)") if speed == 0 else ""
+	ui.set_tutorial(tr("Tutoriel %d/%d — %s%s") % [st + 1, TUTORIAL.size(), tr(TUTORIAL[st]), pause_note], st)
 
 # ------------------------------------------------------------------ Sauvegarde
 
@@ -551,14 +559,14 @@ func export_world(kind: String) -> String:
 	var path := SaveSystem.export_world(world, kind)
 	if path == "":
 		return "Échec de l'export."
-	return "Fichier créé : %s\n(chemin réel : %s)" % [path, ProjectSettings.globalize_path(path)]
+	return tr("Fichier créé : %s\n(chemin réel : %s)") % [path, ProjectSettings.globalize_path(path)]
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		save_now()
 
 func perf_text() -> String:
-	return "[b]Mesures[/b]\nIPS %d · dernier tick %.2f ms · maillage %d sommets (reconstruit en %.0f ms)\nMémoire statique %.1f Mo · objets %d · appels de dessin %d\nÉtablissements %d · cellules %d" % [
+	return tr("[b]Mesures[/b]\nIPS %d · dernier tick %.2f ms · maillage %d sommets (reconstruit en %.0f ms)\nMémoire statique %.1f Mo · objets %d · appels de dessin %d\nÉtablissements %d · cellules %d") % [
 		Engine.get_frames_per_second(), float(world.tick_ms_last), view.vertex_count(), view.last_build_ms,
 		Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0, int(Performance.get_monitor(Performance.OBJECT_COUNT)),
 		int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)), world.alive_settlements().size(), world.planet.cell_count]

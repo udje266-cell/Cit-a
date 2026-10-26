@@ -127,3 +127,24 @@ Purement visuel : la simulation n'en dépend pas (seul ajout : le champ `from` d
 - Bus « Musique » et « Effets », volumes et coupure dans le menu, mémorisés dans `user://settings.cfg`.
 - Écoute hors du jeu : `tools/export_audio.gd` écrit les fichiers WAV. **Non vérifié à l'oreille par l'auteur** :
   seuls l'amplitude, l'absence de saturation et la durée sont testés.
+
+## D46 — Interface : surbrillance du tutoriel, noms des villages, sélecteur de fichiers
+- **Tutoriel** : un cadre doré pulsant entoure l'élément visé par l'étape (Pouvoirs, puis la catégorie « Signes »
+  ramenée à l'écran, Affinités, Journal). Vérifié dans `tests/interaction_demo.gd` (49 vérifications).
+- **Noms** : toutes les 0,15 s, les étiquettes sont projetées à l'écran ; par ordre de population, une étiquette qui
+  en chevauche une autre est masquée et la première annonce « +N ». Masquées près de l'horizon et sous l'interface,
+  dessinées par-dessus le relief. Mesure (an 450, 93 villages) : 12 visibles, 0 chevauchement.
+- **Fichiers** : « Choisir un fichier sur l'appareil… » et « Enregistrer une copie sur l'appareil… » utilisent le
+  sélecteur natif quand le système en fournit un (Android, bureau), sinon la boîte de dialogue de Godot. Le fichier
+  choisi est recopié dans les exports avant import. **Le sélecteur natif Android n'a pas été testé sur un appareil.**
+
+## D47 — Traduction (`game/i18n.gd`, `data/i18n/en.json`, `tools/extract_strings.py`)
+- Clé = texte français exact. Au chargement d'une langue : une `Translation` Godot (textes fixes traduits
+  automatiquement ; gabarits passés par `tr()` avant « % ») et traduction en place du catalogue.
+- Langue choisie dans le menu (Français / English), mémorisée ; par défaut celle du système si disponible.
+- `tools/extract_strings.py` recense les textes (interface, catalogue, libellés constants) et la couverture :
+  anglais 217/217 textes d'interface détectés, 406/406 du catalogue. Un test vérifie que chaque traduction garde les
+  mêmes codes de format.
+- **Reste en français** : le journal et les explications produits par la simulation (événements, causes, raisons
+  de blocage des découvertes), les noms de religions, quelques mots assemblés dans les fiches. Captures :
+  `docs/captures/langue_anglais_*.png`.

@@ -1,8 +1,8 @@
-# Démonstration vérifiable — version 0.3.0
+# Démonstration vérifiable — version 0.4.0
 
 Séquence produite par `tests/interaction_demo.gd`. Le jeu y est piloté par de **vrais événements d'entrée** :
 glisser et molette à la souris, glisser au doigt, clics sur les boutons de l'interface, toucher sur la planète.
-Le script vérifie chaque étape et capture l'écran. Résultat : **47 vérifications réussies, 0 échec**.
+Le script vérifie chaque étape et capture l'écran. Résultat : **49 vérifications réussies, 0 échec**.
 
 ```
 xvfb-run godot --path . --rendering-method gl_compatibility -s tests/interaction_demo.gd -- <dossier>
@@ -29,7 +29,10 @@ tactile réel (précision du doigt, gestes à deux doigts, zone de sécurité) r
 envoyaient aucun, et le temps continuait de s'écouler. Le tutoriel est maintenant en pause jusqu'à sa fin ou
 jusqu'à « Passer », avec un bouton « Étape suivante ».
 
-À développer : surbrillance de l'élément d'interface visé par chaque étape.
+**Nouveau** : un cadre lumineux entoure l'élément visé par l'étape (bouton « Pouvoirs », puis catégorie
+« Signes » ramenée à l'écran). ✔ vérifié tiroir fermé et tiroir ouvert.
+
+![Surbrillance](captures/demo_01b_tutoriel_surbrillance.png)
 
 ## 2. Village sélectionné et sa fiche
 ![Fiche du village, noms et frontières](captures/demo_02_fiche_village_noms_frontieres.png)
@@ -45,8 +48,12 @@ Repères : dans **Cartes**, les options « Noms des villages » (étiquettes aux
 population) et « Frontières des peuples » (traits fins aux couleurs du peuple) s'activent indépendamment de la
 carte thématique. Les bannières ont une forme propre à chaque espèce.
 
-À développer : regroupement des étiquettes quand beaucoup de villages se chevauchent ; icônes de besoin
-au-dessus des villages.
+**Nouveau** : les noms ne se chevauchent plus ; le village le plus peuplé d'un groupe annonce « +N ».
+Mesure sur un monde de 450 ans (93 villages) : 12 noms visibles, 0 chevauchement.
+
+![Noms regroupés](captures/noms_regroupes.png)
+
+À développer : icônes de besoin au-dessus des villages.
 
 ## 3. Activité autonome et son résultat
 ![Journal](captures/demo_03_activite_autonome_journal.png)
@@ -59,7 +66,11 @@ Correction d'équilibrage : chez les Sylvains (reproduction lente), la première
 environ 200 ans. Les colons partent maintenant dès que le village atteint 55 % de la capacité du milieu
 (au lieu de 70 %).
 
-À développer : rendre visible l'activité sur la carte (colons en route, chantiers).
+**Nouveau** : routes entre villages, ports et bateaux, convoi de colons à chaque fondation, passants.
+
+| | |
+|---|---|
+| ![Région](captures/vie_region.png) | ![Village](captures/vie_village.png) |
 
 ## 4. Naissances, affinités et leur origine
 ![Habitants représentatifs](captures/demo_04_habitants_affinites.png)
@@ -104,7 +115,9 @@ hors de l'écran, à droite. On voyait donc « Signe céleste » et « Murmure �
 par défaut est maintenant « Terrain », un en-tête nomme la catégorie active, et l'onglet défile pour rester
 visible.
 
-À développer : effet visuel propre à chaque pouvoir (pluie, aurore, séisme).
+**Nouveau** : effet visuel propre à chaque type de pouvoir, et son associé.
+
+![Effets](captures/effets_pouvoirs.png)
 
 ## 6. Sauvegarde rechargée
 ![Après rechargement](captures/demo_08_apres_rechargement.png)
@@ -113,6 +126,19 @@ visible.
 (ferveur 60 %), l'énergie (89,5), les statistiques de naissances et l'historique des attributions, ainsi que la
 règle activée.
 
+## 7. Nouveautés de la version 0.4.0
+| | |
+|---|---|
+| ![Graphiques](captures/graphes_peuples.png) | ![Traits](captures/graphes_traits.png) |
+| ![Anglais](captures/langue_anglais_jeu.png) | ![Fondateurs en anglais](captures/langue_anglais_fondateurs.png) |
+
+Diplomatie (traités, commerce, tributs, conquêtes, unions, pactes divins), graphiques et arbre des peuples,
+années climatiques, 26 pouvoirs sur 8 niveaux, son et musique générés, langue anglaise.
+
 ## Autres vérifications de cette version
-- Tests de simulation : 30 tests, 349 assertions (nouveau : cohérence des origines d'affinité).
+- Tests de simulation : 41 tests, 389 assertions (diplomatie, séries historiques, nouveaux pouvoirs, climat,
+  synthèse sonore, fichiers externes, traduction).
 - Test de fumée de l'interface : parcours complet sans erreur.
+- Équilibrage : `tests/balance_report.gd` (1000 ans × 3 graines) ; captures : `tests/fx_shots.gd`,
+  `tests/life_shots.gd`, `tests/graphs_shot.gd`, `tests/lang_shots.gd`.
+- Non vérifié : téléphone Android (gestes réels, sélecteur natif, performances), écoute du son par un humain.

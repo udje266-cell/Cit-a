@@ -82,7 +82,7 @@ func build(p_cat, initial_energy: float) -> void:
 	mid.add_child(_tabs)
 	for f in 2:
 		_tabs.add_child(_founder_tab(f))
-		_tabs.set_tab_title(f, "Fondateur %d" % (f + 1))
+		_tabs.set_tab_title(f, tr("Fondateur %d") % (f + 1))
 	var bottom := HBoxContainer.new()
 	root.add_child(bottom)
 	var rnd := Button.new(); rnd.text = "Traits au hasard"; rnd.custom_minimum_size = Vector2(220, 56)
@@ -107,7 +107,7 @@ func _founder_tab(f: int) -> Control:
 	_name_edits.append(ne)
 	var ao := OptionButton.new()
 	for a in Affinity.ALL:
-		ao.add_item(Affinity.NAMES[a] + ("" if a == "none" else " (don divin : %.1f énergie)" % float(cat.config.affinity.cost[a])))
+		ao.add_item(tr(Affinity.NAMES[a]) + ("" if a == "none" else tr(" (don divin : %.1f énergie)") % float(cat.config.affinity.cost[a])))
 	ao.item_selected.connect(_on_affinity.bind(f))
 	h.add_child(ao)
 	_aff_options.append(ao)
@@ -133,7 +133,7 @@ func _founder_tab(f: int) -> Control:
 			var cb := CheckBox.new()
 			var cost := int(t.cost)
 			var kind := "" if t.kind == "heritable" else " [acquis : culture]"
-			var price := ("coût %d" % cost) if cost >= 0 else ("rend %d" % -cost)
+			var price := (tr("coût %d") % cost) if cost >= 0 else (tr("rend %d") % -cost)
 			cb.text = "%s (%s) — %s%s" % [t.name, price, t.desc, kind]
 			cb.tooltip_text = _fx_text(t)
 			cb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -183,9 +183,9 @@ func _flash(f: int, msg: String) -> void:
 
 func _update_labels() -> void:
 	for f in 2:
-		_points_labels[f].text = "Points utilisés : %d / %d   ·   %d trait(s)" % [_points_used(f), POINTS, founders[f].traits.size()]
+		_points_labels[f].text = tr("Points utilisés : %d / %d   ·   %d trait(s)") % [_points_used(f), POINTS, founders[f].traits.size()]
 	var spent := _affinity_cost()
-	_energy_label.text = "Énergie divine initiale : %.1f — dons d'affinité aux fondateurs : %.1f" % [energy_available, spent]
+	_energy_label.text = tr("Énergie divine initiale : %.1f — dons d'affinité aux fondateurs : %.1f") % [energy_available, spent]
 	_energy_label.add_theme_color_override("font_color", Color(1, 0.4, 0.4) if spent > energy_available else Color(0.8, 0.9, 1))
 
 func _affinity_cost() -> float:
@@ -200,9 +200,9 @@ func _select_species(id: String) -> void:
 	var s: Dictionary = cat.species[id]
 	var hab: Array = s.habitat.keys()
 	hab.sort_custom(func(a, b): return float(s.habitat[a]) > float(s.habitat[b]))
-	_species_desc.text = "[b]%s[/b]\n%s\n\nLongévité : %d ans · génération : %d ans\nCroissance : %.1f %%/an · potentiel magique ×%.1f\nMilieux favoris : %s" % [
+	_species_desc.text = tr("[b]%s[/b]\n%s\n\nLongévité : %d ans · génération : %d ans\nCroissance : %.1f %%/an · potentiel magique ×%.1f\nMilieux favoris : %s") % [
 		s.name, s.desc, int(s.longevity), int(s.generation_years), float(s.growth) * 100.0, float(s.magic_potential),
-		", ".join(hab.slice(0, 3).map(func(b): return preload("res://sim/planet.gd").BIOME_NAMES.get(b, b)))]
+		", ".join(hab.slice(0, 3).map(func(b): return tr(preload("res://sim/planet.gd").BIOME_NAMES.get(b, b))))]
 	_randomize_names()
 
 func _randomize_names() -> void:
@@ -212,7 +212,7 @@ func _randomize_names() -> void:
 		founders[f].name = Genetics.make_name(_rng, species_id)
 		_name_edits[f].text = founders[f].name
 	if _people_name.text == "":
-		_people_name.placeholder_text = "Nom du peuple (ex. %s)" % Genetics.make_name(_rng, species_id)
+		_people_name.placeholder_text = tr("Nom du peuple (ex. %s)") % Genetics.make_name(_rng, species_id)
 
 func _randomize() -> void:
 	for f in 2:

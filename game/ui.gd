@@ -11,6 +11,7 @@ const Powers = preload("res://sim/powers.gd")
 const Diplomacy = preload("res://sim/diplomacy.gd")
 const History = preload("res://sim/history.gd")
 const Climate = preload("res://sim/climate.gd")
+const I18n = preload("res://game/i18n.gd")
 const Chart = preload("res://game/chart.gd")
 const Planet = preload("res://sim/planet.gd")
 const PlanetView = preload("res://game/planet_view.gd")
@@ -231,7 +232,7 @@ func _build_top_bar() -> void:
 func update_speed(speed: int) -> void:
 	for k in speed_buttons:
 		speed_buttons[k].set_pressed_no_signal(k == speed)
-	speed_label.text = "En pause" if speed == 0 else "Vitesse ×%d" % speed
+	speed_label.text = "En pause" if speed == 0 else tr("Vitesse ×%d") % speed
 	speed_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.45) if speed == 0 else Color(0.85, 0.9, 1.0))
 
 # ------------------------------------------------------------------ Rail de navigation
@@ -396,9 +397,9 @@ func refresh_info() -> void:
 		return
 	var pl = world.planet
 	var c := selected_cell
-	var t := "[b]%s[/b]\nTempérature %.0f %% · Humidité %.0f %% · Fertilité %.0f %%\nRessources : %s\n" % [
-		Planet.BIOME_NAMES[pl.biome_name(c)], pl.temperature[c] * 100.0, pl.moisture[c] * 100.0, pl.fertility[c] * 100.0,
-		", ".join(pl.res_list(c).map(func(r): return Planet.RES_NAMES[r])) if pl.res_list(c).size() > 0 else "aucune"]
+	var t := tr("[b]%s[/b]\nTempérature %.0f %% · Humidité %.0f %% · Fertilité %.0f %%\nRessources : %s\n") % [
+		tr(Planet.BIOME_NAMES[pl.biome_name(c)]), pl.temperature[c] * 100.0, pl.moisture[c] * 100.0, pl.fertility[c] * 100.0,
+		", ".join(pl.res_list(c).map(func(r): return tr(Planet.RES_NAMES[r]))) if pl.res_list(c).size() > 0 else "aucune"]
 	for ch in info_buttons.get_children():
 		ch.queue_free()
 	var s: Dictionary = world.settlement_at(c)
@@ -406,26 +407,26 @@ func refresh_info() -> void:
 		var p: Dictionary = world.peoples[int(s.people)]
 		var tot := maxf(float(s.aff.none) + float(s.aff.magic) + float(s.aff.sword) + float(s.aff.both), 1.0)
 		t += "\n" + village_summary(s)
-		t += "\n[b]Affinités[/b] (sur %d habitants)\n" % int(tot)
+		t += tr("\n[b]Affinités[/b] (sur %d habitants)\n") % int(tot)
 		for a in ["none", "magic", "sword", "both"]:
-			t += "  %s : %d (%.1f %%)\n" % [Affinity.NAMES[a], int(s.aff[a]), float(s.aff[a]) / tot * 100.0]
-		t += "  Maîtrise magique %.0f %% · maîtrise de l'épée %.0f %% (apprentissage des porteurs)\n" % [float(s.mastery.magic) * 100.0, float(s.mastery.sword) * 100.0]
-		t += "  Entraînement aux armes (compétence ordinaire, tous) %.0f %%\n" % (float(s.training) * 100.0)
+			t += "  %s : %d (%.1f %%)\n" % [tr(Affinity.NAMES[a]), int(s.aff[a]), float(s.aff[a]) / tot * 100.0]
+		t += tr("  Maîtrise magique %.0f %% · maîtrise de l'épée %.0f %% (apprentissage des porteurs)\n") % [float(s.mastery.magic) * 100.0, float(s.mastery.sword) * 100.0]
+		t += tr("  Entraînement aux armes (compétence ordinaire, tous) %.0f %%\n") % (float(s.training) * 100.0)
 		var bs: Dictionary = s.births
-		t += "  Naissances : %d ouvertes au divin (%d sans attribution), %d naturelles\n" % [int(bs.divine_slots), int(bs.divine_none), int(bs.natural_slots)]
-		t += "\n[b]Foi[/b] — ferveur %.0f %%\n" % (float(s.fervor) * 100.0)
+		t += tr("  Naissances : %d ouvertes au divin (%d sans attribution), %d naturelles\n") % [int(bs.divine_slots), int(bs.divine_none), int(bs.natural_slots)]
+		t += tr("\n[b]Foi[/b] — ferveur %.0f %%\n") % (float(s.fervor) * 100.0)
 		for rid in s.faith:
 			t += "  %s : %.0f %%\n" % [world.religions[int(rid)].name, float(s.faith[rid]) * 100.0]
 		var unbelief := 1.0
 		for rid in s.faith:
 			unbelief -= float(s.faith[rid])
-		t += "  Sans religion : %.0f %%\n" % (maxf(unbelief, 0.0) * 100.0)
+		t += tr("  Sans religion : %.0f %%\n") % (maxf(unbelief, 0.0) * 100.0)
 		if not s.statuses.is_empty():
 			var st := []
 			for k in s.statuses:
 				st.append("%s (%d ans)" % [world.cat.temporary[k].name, int(s.statuses[k])])
 			t += "\n[b]États temporaires[/b] : %s\n" % ", ".join(st)
-		t += "\n[b]Traits héréditaires dominants[/b]\n"
+		t += tr("\n[b]Traits héréditaires dominants[/b]\n")
 		var keys: Array = s.freqs.keys()
 		keys.sort_custom(func(a, b): return float(s.freqs[a]) > float(s.freqs[b]))
 		for k in keys.slice(0, 8):
@@ -482,7 +483,7 @@ func _rebuild_families() -> void:
 	for fam in world.cat.power_families:
 		var b := Button.new()
 		b.icon = Icons.get_icon(FAMILY_ICONS.get(fam, "star"))
-		b.text = FAMILY_SHORT.get(fam, fam)
+		b.text = tr(FAMILY_SHORT.get(fam, fam))
 		b.tooltip_text = world.cat.power_families[fam]
 		b.toggle_mode = true
 		b.custom_minimum_size.y = 52
@@ -514,10 +515,10 @@ func _rebuild_powers() -> void:
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(0, 56)
 		if Powers.is_unlocked(world, d, pid):
-			b.text = "%s  ·  %s" % [p.name, ("%.0f énergie" % float(p.cost)) if pid != "don_affinite" else "coût variable"]
+			b.text = "%s  ·  %s" % [p.name, (tr("%.0f énergie") % float(p.cost)) if pid != "don_affinite" else tr("coût variable")]
 			b.icon = Icons.get_icon("bolt")
 		else:
-			b.text = "%s  (niveau %d)" % [p.name, int(p.unlock.get("level", 0))]
+			b.text = tr("%s  (niveau %d)") % [p.name, int(p.unlock.get("level", 0))]
 			b.icon = Icons.get_icon("lock")
 		# Jamais désactivé : toucher un pouvoir indisponible explique pourquoi (les infobulles n'existent pas au doigt).
 		if reason != "":
@@ -526,7 +527,7 @@ func _rebuild_powers() -> void:
 		b.set_meta("power", pid)
 		b.pressed.connect(_on_power_pressed.bind(pid))
 		power_bar.add_child(b)
-	family_label.text = "[b]Catégorie : %s[/b] — %s · %d pouvoir(s)" % [FAMILY_SHORT.get(current_family, current_family), world.cat.power_families[current_family], count]
+	family_label.text = tr("[b]Catégorie : %s[/b] — %s · %d pouvoir(s)") % [tr(FAMILY_SHORT.get(current_family, current_family)), world.cat.power_families[current_family], count]
 	brush_toggle = CheckButton.new()
 	brush_toggle.text = "Pinceau"
 	brush_toggle.tooltip_text = "Glisser le doigt applique le pouvoir de terrain en continu"
@@ -541,10 +542,10 @@ func power_block_reason(pid: String) -> String:
 	if not Powers.is_unlocked(world, d, pid):
 		var lvl := int(p.unlock.get("level", 0))
 		var need := int(world.cat.level_xp[mini(lvl, world.cat.level_xp.size() - 1)])
-		return "Verrouillé : débloqué au niveau %d (vous êtes niveau %d, %d / %d XP). Les objectifs de la fiche Foi font progresser." % [lvl, int(d.level), int(d.xp), need]
+		return tr("Verrouillé : débloqué au niveau %d (vous êtes niveau %d, %d / %d XP). Les objectifs de la fiche Foi font progresser.") % [lvl, int(d.level), int(d.xp), need]
 	if pid != "don_affinite" and float(d.energy) < float(p.cost):
 		var rate := maxf(float(d.faith_rate), 0.01)
-		return "Énergie insuffisante : %.1f / %.0f. Votre foi rapporte +%.2f par an (≈ %d ans d'attente)." % [float(d.energy), float(p.cost), float(d.faith_rate), int(ceil((float(p.cost) - float(d.energy)) / rate))]
+		return tr("Énergie insuffisante : %.1f / %.0f. Votre foi rapporte +%.2f par an (≈ %d ans d'attente).") % [float(d.energy), float(p.cost), float(d.faith_rate), int(ceil((float(p.cost) - float(d.energy)) / rate))]
 	return ""
 
 func _on_power_pressed(pid: String) -> void:
@@ -578,16 +579,16 @@ func show_targeting(pid: String) -> void:
 	var p: Dictionary = world.cat.powers[pid]
 	confirm_bar.visible = true
 	confirm_ok.disabled = true
-	confirm_label.text = "[b]%s[/b]\n%s\n[i]Touchez une région de la planète pour prévisualiser la zone et le coût.[/i]" % [p.name, p.desc]
+	confirm_label.text = tr("[b]%s[/b]\n%s\n[i]Touchez une région de la planète pour prévisualiser la zone et le coût.[/i]") % [p.name, p.desc]
 
 func show_preview(pv: Dictionary, delayed: Array) -> void:
 	confirm_bar.visible = true
 	confirm_ok.disabled = not pv.ok
-	var t := "[b]%s[/b] — coût [color=#7fd4ff]%.1f[/color] énergie\nZone : %d cellule(s), %d établissement(s)\n" % [pv.name, float(pv.cost), pv.cells.size(), pv.settlements.size()]
+	var t := tr("[b]%s[/b] — coût [color=#7fd4ff]%.1f[/color] énergie\nZone : %d cellule(s), %d établissement(s)\n") % [pv.name, float(pv.cost), pv.cells.size(), pv.settlements.size()]
 	if not delayed.is_empty():
-		t += "Conséquences différées : %s\n" % ", ".join(delayed.map(func(e): return "%s dans %d ans" % [e.t, int(e.after)]))
+		t += "Conséquences différées : %s\n" % ", ".join(delayed.map(func(e): return tr("%s dans %d ans") % [e.t, int(e.after)]))
 	for wmsg in pv.warnings:
-		t += "[color=#ff9966]Attention : %s[/color]\n" % wmsg
+		t += tr("[color=#ff9966]Attention : %s[/color]\n") % wmsg
 	if not pv.ok:
 		t += "[color=#ff6666]%s[/color]" % pv.reason
 	confirm_label.text = t
@@ -627,7 +628,7 @@ func refresh_log() -> void:
 	var n: int = world.chronicle.size()
 	for i in range(n - 1, maxi(-1, n - 80), -1):
 		var e: Dictionary = world.chronicle[i]
-		t += "[color=%s]An %d — %s[/color]\n   [i][color=#9aa]Cause : %s[/color][/i]\n" % [KIND_COLORS.get(e.kind, "#ffffff"), int(e.y), e.txt, e.why]
+		t += tr("[color=%s]An %d — %s[/color]\n   [i][color=#9aa]Cause : %s[/color][/i]\n") % [KIND_COLORS.get(e.kind, "#ffffff"), int(e.y), e.txt, e.why]
 	log_text.text = t
 
 # ------------------------------------------------------------------ Mise à jour régulière
@@ -639,11 +640,11 @@ func refresh_hud(speed: int, catching_up: String = "") -> void:
 	if world == null:
 		return
 	var d: Dictionary = world.deities[world.player_deity]
-	chips.year.text = "An %d" % world.year
+	chips.year.text = tr("An %d") % world.year
 	if world.climate.kind != "":
-		chips.year.text += " · " + str(Climate.KINDS[world.climate.kind].name)
+		chips.year.text += " · " + tr(str(Climate.KINDS[world.climate.kind].name))
 	chips.energy.text = "%.0f / %.0f" % [float(d.energy), float(d.max_energy)]
-	chips.faith.text = "+%.2f/an" % float(d.faith_rate)
+	chips.faith.text = tr("+%.2f/an") % float(d.faith_rate)
 	chips.believers.text = "%d" % int(d.believers)
 	energy_bar.max_value = float(d.max_energy)
 	energy_bar.value = float(d.energy)
@@ -669,16 +670,16 @@ func show_explain(topic: String) -> void:
 	var d: Dictionary = world.deities[world.player_deity]
 	match topic:
 		"year":
-			show_message("Le temps", ["Un tour de simulation = 1 an. Utilisez la pause et les vitesses en haut à droite.", "Pendant votre absence, le monde avance (8 h maximum).", "Climat : %s. Des épisodes de quelques années surviennent : sécheresses (régions chaudes et sèches, récoltes −30 %%), hivers rudes (régions froides, −30 %%), années fastes (partout, +20 %%). Le pouvoir « Saison douce » protège une région." % Climate.label(world)])
+			show_message("Le temps", ["Un tour de simulation = 1 an. Utilisez la pause et les vitesses en haut à droite.", "Pendant votre absence, le monde avance (8 h maximum).", tr("Climat : %s. Des épisodes de quelques années surviennent : sécheresses (régions chaudes et sèches, récoltes −30 %%), hivers rudes (régions froides, −30 %%), années fastes (partout, +20 %%). Le pouvoir « Saison douce » protège une région.") % Climate.label(world)])
 		"energy":
-			show_message("Énergie divine", ["Réserve dépensée par les pouvoirs et les dons d'affinité : %.1f sur %.0f." % [float(d.energy), float(d.max_energy)],
+			show_message("Énergie divine", [tr("Réserve dépensée par les pouvoirs et les dons d'affinité : %.1f sur %.0f.") % [float(d.energy), float(d.max_energy)],
 				"Elle se remplit chaque année grâce à la foi produite par vos fidèles. Le maximum augmente avec votre niveau.",
 				"Sans fidèles, une étincelle se régénère lentement : vous pouvez toujours murmurer."])
 		"faith":
-			show_message("Production de foi", ["+%.2f énergie par an." % float(d.faith_rate), "Elle dépend du nombre de fidèles × leur ferveur × leurs temples.",
+			show_message("Production de foi", [tr("+%.2f énergie par an.") % float(d.faith_rate), "Elle dépend du nombre de fidèles × leur ferveur × leurs temples.",
 				"Les miracles vus augmentent la ferveur ; les crises sans aide divine la font baisser."])
 		"believers":
-			show_message("Fidèles", ["%d personnes croient en vous, dans tous les peuples." % int(d.believers), "Une religion peut dépasser les frontières de votre peuple : elle se diffuse entre voisins."])
+			show_message("Fidèles", [tr("%d personnes croient en vous, dans tous les peuples.") % int(d.believers), "Une religion peut dépasser les frontières de votre peuple : elle se diffuse entre voisins."])
 
 func show_peoples() -> void:
 	var body := open_modal("Peuples du monde")
@@ -691,7 +692,7 @@ func show_peoples() -> void:
 		sw.custom_minimum_size = Vector2(18, 40)
 		row.add_child(sw)
 		var l := Label.new()
-		l.text = "%s — %s, %d hab., %d villages · %s" % [p.name, p.polity, int(world.people_pop(int(p.id))), world.people_settlements(int(p.id)).size(), world.deities[int(p.deity)].name]
+		l.text = tr("%s — %s, %d hab., %d villages · %s") % [p.name, tr(p.polity), int(world.people_pop(int(p.id))), world.people_settlements(int(p.id)).size(), world.deities[int(p.deity)].name]
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		row.add_child(l)
@@ -801,21 +802,21 @@ func show_people(pid: int) -> void:
 	var p: Dictionary = world.peoples[pid]
 	var body := open_modal(p.name)
 	var agg := Civ.people_aggregate(world, p)
-	var t := "[b]%s[/b] · %s · %s\n" % [world.cat.species[p.species].name, p.polity, world.cat.eras[int(p.era)]]
-	t += "Population %d dans %d établissement(s) · stabilité moyenne %.0f %%\n" % [int(agg.pop), world.people_settlements(pid).size(), agg.stability * 100.0]
+	var t := "[b]%s[/b] · %s · %s\n" % [world.cat.species[p.species].name, tr(p.polity), world.cat.eras[int(p.era)]]
+	t += tr("Population %d dans %d établissement(s) · stabilité moyenne %.0f %%\n") % [int(agg.pop), world.people_settlements(pid).size(), agg.stability * 100.0]
 	var lean := float(p.lean)
-	t += "Voie : %s (%.2f)\n" % ["science" if lean > 0.2 else ("magie" if lean < -0.2 else "hybride"), lean]
-	t += "Porteurs d'affinité : magie %.1f %% · épée %.1f %%\n" % [agg.share_magic * 100.0, agg.share_sword * 100.0]
-	t += "\n[b]Origines[/b] — fondé en l'an %d par :\n" % int(p.founded)
+	t += tr("Voie : %s (%.2f)\n") % ["science" if lean > 0.2 else ("magie" if lean < -0.2 else "hybride"), lean]
+	t += tr("Porteurs d'affinité : magie %.1f %% · épée %.1f %%\n") % [agg.share_magic * 100.0, agg.share_sword * 100.0]
+	t += tr("\n[b]Origines[/b] — fondé en l'an %d par :\n") % int(p.founded)
 	for f in p.founders:
-		t += "  %s (%s) — %s\n" % [f.name, Affinity.NAMES[f.get("affinity", "none")], ", ".join(f.traits.map(func(x): return world.cat.traits[x].name if world.cat.traits.has(x) else x))]
-	t += "\n[b]Découvertes[/b] (%d)\n  %s\n" % [p.techs.size(), ", ".join(p.techs.keys().map(func(x): return world.cat.techs[x].name))]
+		t += "  %s (%s) — %s\n" % [f.name, tr(Affinity.NAMES[f.get("affinity", "none")]), ", ".join(f.traits.map(func(x): return world.cat.traits[x].name if world.cat.traits.has(x) else x))]
+	t += tr("\n[b]Découvertes[/b] (%d)\n  %s\n") % [p.techs.size(), ", ".join(p.techs.keys().map(func(x): return world.cat.techs[x].name))]
 	var cur: String = p.research.current
 	if cur != "":
-		t += "Recherche en cours : %s (%.0f / %.0f)\n" % [world.cat.techs[cur].name, float(p.research.progress), float(world.cat.techs[cur].cost)]
+		t += tr("Recherche en cours : %s (%.0f / %.0f)\n") % [world.cat.techs[cur].name, float(p.research.progress), float(world.cat.techs[cur].cost)]
 	else:
-		t += "[color=#ffab66]Aucune recherche possible (stagnation)[/color]\n"
-	t += "\n[b]Prochaines découvertes et obstacles[/b]\n"
+		t += tr("[color=#ffab66]Aucune recherche possible (stagnation)[/color]\n")
+	t += tr("\n[b]Prochaines découvertes et obstacles[/b]\n")
 	var shown := 0
 	for tid in world.cat.tech_order:
 		if p.techs.has(tid) or shown >= 6:
@@ -847,7 +848,7 @@ func show_people(pid: int) -> void:
 			t += "  %s : %.2f%s\n" % [o.name, float(r.value), "" if tags.is_empty() else " — " + ", ".join(tags)]
 	for o in world.peoples:
 		if int(o.get("merged_into", -1)) == pid:
-			t += "  %s a rejoint ce royaume (union)\n" % o.name
+			t += tr("  %s a rejoint ce royaume (union)\n") % o.name
 	t += "\n[b]Histoire[/b]\n"
 	for hst in p.history.slice(maxi(0, p.history.size() - 15)):
 		t += "  An %d — %s\n" % [int(hst.year), hst.text]
@@ -875,7 +876,7 @@ func show_people(pid: int) -> void:
 	for st in world.people_settlements(pid):
 		var row := HBoxContainer.new()
 		var l := Label.new()
-		l.text = "%s — %d hab." % [st.name, int(st.pop)]
+		l.text = tr("%s — %d hab.") % [st.name, int(st.pop)]
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(l)
 		row.add_child(_button("Voir", main.focus_settlement.bind(int(st.id))))
@@ -888,13 +889,13 @@ func show_individuals(sid: int) -> void:
 	var body := open_modal("Habitants représentatifs de " + s.name)
 	body.add_child(_rich("[i]Individus tirés de la distribution réelle de l'établissement : traits selon leurs fréquences, affinité et origine selon les comptes de naissances (simulation agrégée).[/i]\n" + affinity_origin_summary(s)))
 	for ind in Genetics.representatives(world.cat, s, str(s.get("species", p.species)), 6, sid * 31 + world.year):
-		var t := "[b]%s[/b], %d ans — [color=#ffd966]%s[/color]\n" % [ind.name, int(ind.age), Affinity.NAMES[ind.affinity]]
+		var t := tr("[b]%s[/b], %d ans — [color=#ffd966]%s[/color]\n") % [ind.name, int(ind.age), tr(Affinity.NAMES[ind.affinity])]
 		if ind.affinity != "none":
-			t += "  Origine de l'affinité : %s\n" % Affinity.source_label(str(ind.origin))
+			t += tr("  Origine de l'affinité : %s\n") % Affinity.source_label(str(ind.origin))
 		else:
-			t += "  Aucune affinité (naissance non attribuée ou hasard)\n"
-		t += "  Traits : %s\n" % (", ".join(ind.traits.map(func(x): return world.cat.traits[x].name)) if ind.traits.size() > 0 else "aucun trait marquant")
-		t += "  Maîtrise magique %.0f %% · maîtrise de l'épée %.0f %% · entraînement aux armes %.0f %%\n" % [float(ind.mastery_magic) * 100.0, float(ind.mastery_sword) * 100.0, float(ind.weapon_training) * 100.0]
+			t += tr("  Aucune affinité (naissance non attribuée ou hasard)\n")
+		t += tr("  Traits : %s\n") % (", ".join(ind.traits.map(func(x): return world.cat.traits[x].name)) if ind.traits.size() > 0 else "aucun trait marquant")
+		t += tr("  Maîtrise magique %.0f %% · maîtrise de l'épée %.0f %% · entraînement aux armes %.0f %%\n") % [float(ind.mastery_magic) * 100.0, float(ind.mastery_sword) * 100.0, float(ind.weapon_training) * 100.0]
 		body.add_child(_rich(t))
 
 func show_deity(did: int) -> void:
@@ -902,15 +903,15 @@ func show_deity(did: int) -> void:
 	var body := open_modal(d.name)
 	var pers: Dictionary = d.personality
 	var t := "%s\n" % ("[b]Vous[/b]" if d.is_player else "Divinité rivale")
-	t += "Bienveillance %.0f %% · agressivité %.0f %% · penchant %s\n" % [float(pers.benevolence) * 100.0, float(pers.aggression) * 100.0, "magique" if float(pers.magic_bias) > 0.2 else ("guerrier" if float(pers.magic_bias) < -0.2 else "équilibré")]
-	t += "\n[b]Foi[/b]\n  Fidèles : %d\n  Production de foi : %.2f / an\n  Énergie divine : %.1f / %.0f\n  Niveau %d (XP %d)\n" % [int(d.believers), float(d.faith_rate), float(d.energy), float(d.max_energy), int(d.level), int(d.xp)]
-	t += "  Affinités conférées : %d · pouvoirs utilisés : %d\n" % [int(d.affinities_granted), int(d.powers_used)]
-	t += "\n[b]Objectifs (débloquent la progression)[/b]\n"
+	t += tr("Bienveillance %.0f %% · agressivité %.0f %% · penchant %s\n") % [float(pers.benevolence) * 100.0, float(pers.aggression) * 100.0, "magique" if float(pers.magic_bias) > 0.2 else ("guerrier" if float(pers.magic_bias) < -0.2 else "équilibré")]
+	t += tr("\n[b]Foi[/b]\n  Fidèles : %d\n  Production de foi : %.2f / an\n  Énergie divine : %.1f / %.0f\n  Niveau %d (XP %d)\n") % [int(d.believers), float(d.faith_rate), float(d.energy), float(d.max_energy), int(d.level), int(d.xp)]
+	t += tr("  Affinités conférées : %d · pouvoirs utilisés : %d\n") % [int(d.affinities_granted), int(d.powers_used)]
+	t += tr("\n[b]Objectifs (débloquent la progression)[/b]\n")
 	for a in world.cat.achievements:
 		var done: bool = a.id in d.achievements
 		var cur := Faith.metric(world, d, a.cond.type)
 		t += "  %s %s — %s (%s / %s, +%d XP)\n" % ["✔" if done else "○", a.name, a.desc, str(snappedf(cur, 1.0)), str(a.cond.value), int(a.xp)]
-	t += "\n[b]Relations divines[/b]\n"
+	t += tr("\n[b]Relations divines[/b]\n")
 	for o in world.deities:
 		if int(o.id) != did:
 			t += "  %s : %.2f%s\n" % [o.name, float(d.relations.get(str(o.id), 0.0)), " · pacte" if d.get("pacts", {}).has(str(o.id)) else ""]
@@ -951,19 +952,19 @@ func show_affinity_rules() -> void:
 	body.add_child(_button("+ Nouvelle règle", func():
 		var id := int(d.next_rule_id)
 		d.next_rule_id = id + 1
-		d.rules.append(Affinity.new_rule(id, "Règle %d" % id, Affinity.MAGIC, [{"field": "own_people"}], rules.size() + 1, 3))
+		d.rules.append(Affinity.new_rule(id, tr("Règle %d") % id, Affinity.MAGIC, [{"field": "own_people"}], rules.size() + 1, 3))
 		main.on_rules_changed()
 		show_affinity_rules()))
 	var st: Dictionary = world.stats_births
-	var t := "\n[b]Statistiques mondiales des naissances[/b]\n  Ouvertes au divin : %d (sans attribution : %d ; Magie %d · Épée %d · les deux %d)\n  Naturelles : %d (sans %d · Magie %d · Épée %d)\n  Interventions tardives : Magie %d · Épée %d · les deux %d\n" % [
+	var t := tr("\n[b]Statistiques mondiales des naissances[/b]\n  Ouvertes au divin : %d (sans attribution : %d ; Magie %d · Épée %d · les deux %d)\n  Naturelles : %d (sans %d · Magie %d · Épée %d)\n  Interventions tardives : Magie %d · Épée %d · les deux %d\n") % [
 		int(st.divine_slots), int(st.divine_none), int(st.divine.magic), int(st.divine.sword), int(st.divine.both),
 		int(st.natural_slots), int(st.natural.none), int(st.natural.magic), int(st.natural.sword), int(st.late.magic), int(st.late.sword), int(st.late.both)]
-	t += "\n[b]Historique récent[/b]\n"
+	t += tr("\n[b]Historique récent[/b]\n")
 	var hist: Array = world.affinity_history
 	for i in range(hist.size() - 1, maxi(-1, hist.size() - 25), -1):
 		var e: Dictionary = hist[i]
 		var who: String = "hasard" if int(e.deity) < 0 else world.deities[int(e.deity)].name
-		t += "  An %d — %s ×%d à %s — %s (%s)\n" % [int(e.year), Affinity.NAMES[e.result], int(e.count), world.settlements[int(e.settlement)].name, e.reason, who]
+		t += "  An %d — %s ×%d à %s — %s (%s)\n" % [int(e.year), tr(Affinity.NAMES[e.result]), int(e.count), world.settlements[int(e.settlement)].name, e.reason, who]
 	body.add_child(_rich(t))
 
 func _rule_row(d: Dictionary, r: Dictionary) -> Control:
@@ -986,7 +987,7 @@ func _rule_row(d: Dictionary, r: Dictionary) -> Control:
 	h.add_child(pr)
 	var res := OptionButton.new()
 	for a in [Affinity.MAGIC, Affinity.SWORD, Affinity.BOTH]:
-		res.add_item("→ " + Affinity.NAMES[a])
+		res.add_item("→ " + tr(Affinity.NAMES[a]))
 		if a == r.result:
 			res.select(res.item_count - 1)
 	res.item_selected.connect(func(idx): r.result = [Affinity.MAGIC, Affinity.SWORD, Affinity.BOTH][idx])
@@ -1005,7 +1006,7 @@ func _rule_row(d: Dictionary, r: Dictionary) -> Control:
 		show_affinity_rules())
 	v.add_child(add)
 	var stats := Label.new()
-	stats.text = "Appliquée %d fois au total, %d cette année · refusée %d fois faute de budget/énergie" % [int(r.total), int(r.used_this_year), int(r.get("blocked_budget", 0))]
+	stats.text = tr("Appliquée %d fois au total, %d cette année · refusée %d fois faute de budget/énergie") % [int(r.total), int(r.used_this_year), int(r.get("blocked_budget", 0))]
 	v.add_child(stats)
 	return box
 
@@ -1030,7 +1031,7 @@ func _condition_row(r: Dictionary, cond: Dictionary) -> Control:
 			h.add_child(_choice(world.cat.species_order, world.cat.species_order.map(func(x): return world.cat.species[x].name), cond, "value"))
 		"biome":
 			var bl: Array = Planet.BIOMES.slice(2)
-			h.add_child(_choice(bl, bl.map(func(x): return Planet.BIOME_NAMES[x]), cond, "value"))
+			h.add_child(_choice(bl, bl.map(func(x): return tr(Planet.BIOME_NAMES[x])), cond, "value"))
 		"lineage_share":
 			h.add_child(_choice(["magic", "sword", "both", "none"], ["Magie", "Épée", "Magie et Épée", "Sans affinité"], cond, "key"))
 			h.add_child(_choice(["<", ">="], ["<", "≥"], cond, "op"))
@@ -1104,7 +1105,7 @@ func show_manual_affinity(sid: int) -> void:
 	body.add_child(h)
 	var aff := OptionButton.new()
 	for a in [Affinity.MAGIC, Affinity.SWORD, Affinity.BOTH]:
-		aff.add_item(Affinity.NAMES[a])
+		aff.add_item(tr(Affinity.NAMES[a]))
 	h.add_child(aff)
 	var cnt := SpinBox.new(); cnt.min_value = 1; cnt.max_value = 50; cnt.value = 3; cnt.prefix = "Nombre"
 	h.add_child(cnt)
@@ -1116,7 +1117,7 @@ func show_manual_affinity(sid: int) -> void:
 	var any := false
 	for o in d.manual_orders:
 		if int(o.settlement) == sid:
-			orders += "%s ×%d  " % [Affinity.NAMES[o.affinity], int(o.remaining)]
+			orders += "%s ×%d  " % [tr(Affinity.NAMES[o.affinity]), int(o.remaining)]
 			any = true
 	body.add_child(_rich(orders if any else orders + "aucun"))
 	var cfg: Dictionary = world.cat.config.affinity
@@ -1126,7 +1127,7 @@ func show_manual_affinity(sid: int) -> void:
 	body.add_child(h2)
 	var aff2 := OptionButton.new()
 	for a in [Affinity.MAGIC, Affinity.SWORD, Affinity.BOTH]:
-		aff2.add_item(Affinity.NAMES[a])
+		aff2.add_item(tr(Affinity.NAMES[a]))
 	h2.add_child(aff2)
 	var cnt2 := SpinBox.new(); cnt2.min_value = 1; cnt2.max_value = 50; cnt2.value = 2; cnt2.prefix = "Nombre"
 	h2.add_child(cnt2)
@@ -1180,6 +1181,22 @@ func show_game_menu() -> void:
 		main.audio.muted = on
 		main.audio.save_settings())
 	body.add_child(mute)
+	var lang := OptionButton.new()
+	lang.custom_minimum_size.y = 48
+	var codes: Array = I18n.LANGS.keys()
+	for c in codes:
+		lang.add_item(I18n.LANGS[c])
+	lang.selected = codes.find(TranslationServer.get_locale().left(2))
+	lang.item_selected.connect(func(i):
+		main.set_language(codes[i])
+		show_game_menu())
+	var lrow := HBoxContainer.new()
+	var ll := Label.new()
+	ll.text = "Langue"
+	ll.custom_minimum_size.x = 110
+	lrow.add_child(ll)
+	lrow.add_child(lang)
+	body.add_child(lrow)
 	body.add_child(_button("Revoir le tutoriel", func():
 		close_modal()
 		main.tutorial_restart()))
@@ -1231,24 +1248,24 @@ func show_main_menu(worlds: Array, exports: Array) -> void:
 func village_summary(s: Dictionary) -> String:
 	var p: Dictionary = world.peoples[int(s.people)]
 	var d: Dictionary = world.deities[int(p.deity)]
-	var t := "[b][color=#ffd966]%s[/color][/b] — %s\n" % [s.name, p.name]
-	t += "%s · %s · fondé en l'an %d\n" % [world.cat.species[p.species].name, p.polity, int(s.founded)]
+	var t := tr("[b][color=#ffd966]%s[/color][/b] — %s\n") % [s.name, p.name]
+	t += tr("%s · %s · fondé en l'an %d\n") % [world.cat.species[p.species].name, tr(p.polity), int(s.founded)]
 	# Divinité et religion dominante.
 	var main_rel := Faith.main_religion(s)
 	var rel_txt := "aucune"
 	if main_rel != "":
 		var rel: Dictionary = world.religions[int(main_rel)]
-		rel_txt = "%s (%.0f %%, dieu : %s)" % [rel.name, float(s.faith[main_rel]) * 100.0, world.deities[int(rel.deity)].name]
-	t += "Divinité d'origine : %s · Religion dominante : %s · Ferveur %.0f %%\n" % [d.name, rel_txt, float(s.fervor) * 100.0]
+		rel_txt = tr("%s (%.0f %%, dieu : %s)") % [rel.name, float(s.faith[main_rel]) * 100.0, world.deities[int(rel.deity)].name]
+	t += tr("Divinité d'origine : %s · Religion dominante : %s · Ferveur %.0f %%\n") % [d.name, rel_txt, float(s.fervor) * 100.0]
 	# Population et tendance.
 	var delta := float(s.pop) - float(s.get("prev_pop", s.pop))
-	t += "Population [b]%d[/b] (%s%.1f cette année) · capacité du milieu %d\n" % [int(s.pop), "+" if delta >= 0.0 else "", delta, int(s.capacity)]
+	t += tr("Population [b]%d[/b] (%s%.1f cette année) · capacité du milieu %d\n") % [int(s.pop), "+" if delta >= 0.0 else "", delta, int(s.capacity)]
 	# Ressources du territoire.
 	var res := {}
 	for c in s.territory:
 		for r in world.planet.res_list(int(c)):
 			res[r] = true
-	t += "Ressources du territoire (%d cellules) : %s\n" % [s.territory.size(), ", ".join(res.keys().map(func(r): return Planet.RES_NAMES[r])) if res.size() > 0 else "aucune"]
+	t += tr("Ressources du territoire (%d cellules) : %s\n") % [s.territory.size(), ", ".join(res.keys().map(func(r): return tr(Planet.RES_NAMES[r]))) if res.size() > 0 else "aucune"]
 	# Besoins.
 	var needs := []
 	var ratio := float(s.pop) / maxf(float(s.capacity), 1.0)
@@ -1260,9 +1277,9 @@ func village_summary(s: Dictionary) -> String:
 		needs.append("stabilité (%.0f %%)" % (float(s.stability) * 100.0))
 	if float(s.fervor) < 0.3:
 		needs.append("foi : ferveur faible")
-	t += "Besoins : %s\n" % ("; ".join(needs) if needs.size() > 0 else "satisfaits")
+	t += tr("Besoins : %s\n") % ("; ".join(needs) if needs.size() > 0 else "satisfaits")
 	# Développement.
-	t += "Développement : %s · %d découverte(s) · voie %s\n" % [world.cat.eras[int(p.era)], p.techs.size(), "science" if float(p.lean) > 0.2 else ("magie" if float(p.lean) < -0.2 else "hybride")]
+	t += tr("Développement : %s · %d découverte(s) · voie %s\n") % [world.cat.eras[int(p.era)], p.techs.size(), "science" if float(p.lean) > 0.2 else ("magie" if float(p.lean) < -0.2 else "hybride")]
 	# Activité actuelle.
 	var acts := []
 	var cur: String = p.research.current
@@ -1276,19 +1293,19 @@ func village_summary(s: Dictionary) -> String:
 		acts.append("prépare une colonie")
 	if world.people_at_war(int(s.people)):
 		acts.append("en guerre")
-	t += "Activité : %s\n" % (", ".join(acts) if acts.size() > 0 else "vie quotidienne")
+	t += tr("Activité : %s\n") % (", ".join(acts) if acts.size() > 0 else "vie quotidienne")
 	# Problèmes.
 	var probs := []
 	for k in s.statuses:
 		var tmp: Dictionary = world.cat.temporary[k]
 		if float(tmp.fx.get("fert", 0.0)) < 0.0 or k in ["traumatise", "epidemie", "famine", "maudit"]:
 			probs.append("%s (%d ans)" % [tmp.name, int(s.statuses[k])])
-	t += "Problèmes : %s\n" % ("[color=#ffab66]" + ", ".join(probs) + "[/color]" if probs.size() > 0 else "aucun")
+	t += tr("Problèmes : %s\n") % ("[color=#ffab66]" + ", ".join(probs) + "[/color]" if probs.size() > 0 else "aucun")
 	# Dernier événement le concernant.
 	for i in range(world.chronicle.size() - 1, maxi(-1, world.chronicle.size() - 120), -1):
 		var e: Dictionary = world.chronicle[i]
 		if str(e.txt).find(str(s.name)) >= 0:
-			t += "Dernier événement (an %d) : %s — [i]%s[/i]\n" % [int(e.y), e.txt, e.why]
+			t += tr("Dernier événement (an %d) : %s — [i]%s[/i]\n") % [int(e.y), e.txt, e.why]
 			break
 	return t
 
@@ -1304,5 +1321,5 @@ func affinity_origin_summary(s: Dictionary) -> String:
 				parts.append("%s : %d" % [Affinity.source_label(k), int(round(float(srcs[k])))])
 		if parts.size() > 0:
 			any = true
-			t += "  %s — %s\n" % [Affinity.NAMES[a], "; ".join(parts)]
+			t += "  %s — %s\n" % [tr(Affinity.NAMES[a]), "; ".join(parts)]
 	return t if any else t + "  aucun porteur d'affinité pour l'instant\n"

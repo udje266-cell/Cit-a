@@ -45,21 +45,22 @@ démonstration pilotée par de vrais événements d'entrée (47 vérifications).
 4. Équilibrage : rythme d'apparition des villages, revenus de foi, coûts des pouvoirs et des affinités.
 5. Enregistrer les mesures dans ARCHITECTURE.md (cibles initiales → mesurées).
 
-## Jalon 3 — Hérédité avancée et époques
-- Lignées nommées, arbre d'origine du peuple, graphiques d'évolution des traits.
-- Bâtiments par voie (science : métal ; magie : cristaux ; hybride), routes, ports, véhicules.
-- Familles de pouvoirs encore peu fournies : climat saisonnier (saisons réelles), création d'espèces animales.
-- Effets visuels propres à chaque pouvoir (particules low poly).
-
-## Jalon 4 — Diplomatie et religions
-- Négociation explicite (traités, tributs, échanges commerciaux de ressources).
-- Fusions de peuples, royaumes multi-espèces, guerres de religion.
-- Diplomatie du joueur avec les dieux rivaux (pactes proposés, non-agression).
+## Jalon 3 — Profondeur, contenu et interface (✅ PC, 🟡 Android) — décisions D40 à D47
+- ✅ Diplomatie : traités, commerce de ressources, tributs, conquêtes (royaumes multi-espèces), unions, guerres de
+  religion ; pactes entre dieux et diplomatie du joueur.
+- ✅ Séries historiques, graphiques (population, fidèles, affinités, traits), arbre des peuples.
+- ✅ Équilibrage mesuré sur 1000 ans × 3 graines (`tests/balance_report.gd`).
+- ✅ Années climatiques, 26 pouvoirs (8 nouveaux), 8 niveaux, effets visuels par pouvoir.
+- ✅ Routes, ports, bateaux, convois, passants, repères d'époque science/magie/hybride.
+- ✅ Son et musique procéduraux, réglages de volume.
+- ✅ Surbrillance du tutoriel, noms sans chevauchement, sélecteur de fichiers, traduction (français, anglais).
+- Restes : saisons à l'intérieur de l'année (incompatibles avec un pas d'un an), traversées maritimes réelles,
+  colons réellement en transit dans la simulation, journal de la simulation traduit.
 
 ## Jalon 5 — Monde vaste et performances
-- Planète niveau 5 (10 242 cellules) si les mesures Android le permettent.
-- LOD de simulation (régions calmes un tick sur deux), découpage du maillage par régions, mise à jour partielle.
-- Budget mesuré : CPU par système, GPU, mémoire.
+- ✅ Planète niveau 5 (10 242 cellules) au choix ; année découpée en tranches (≤ 0,4 ms par image).
+- À mesurer sur Android : coût d'une année (≈ 17 ms PC au niveau 5, ≈ 40 ms avec ~15 peuples après 1000 ans),
+  mémoire, IPS en vue rapprochée.
 
 ## Jalon 6 — Partage en ligne
 - Service à choisir par le commanditaire (voir ARCHITECTURE.md § Partage). Client `online/share_client.gd`.

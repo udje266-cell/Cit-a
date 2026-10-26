@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_birth_split", "test_natural_never_both", "test_natural_distribution",
 		"test_no_divine_attribution", "test_rule_attribution", "test_parents_both_not_inherited",
 		"test_genetics_never_touch_affinity", "test_late_grant", "test_manual_orders", "test_budget_limit",
-		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_history", "test_new_powers", "test_climate", "test_audio_synth", "test_external_file", "test_growth_bounded", "test_powers", "test_delayed_effect",
+		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_history", "test_new_powers", "test_climate", "test_audio_synth", "test_external_file", "test_i18n", "test_growth_bounded", "test_powers", "test_delayed_effect",
 		"test_conversion", "test_weak_deity_return", "test_save_roundtrip", "test_save_files",
 		"test_migration_v0", "test_export_import", "test_offline", "test_benchmark",
 	]
@@ -549,6 +549,29 @@ func test_external_file() -> void:
 	check(not r.has("error") and int(r.world.year) == int(w.year), "le fichier externe s'importe (an %d)" % int(w.year))
 	check(SaveSystem.copy_into_exports("/chemin/inexistant.cworld") == "", "fichier introuvable : échec propre")
 	DirAccess.remove_absolute(outside)
+
+func test_i18n() -> void:
+	var I18n = load("res://game/i18n.gd")
+	var n: int = I18n.apply("en", cat)
+	check(n > 500, "traduction anglaise chargée (%d textes)" % n)
+	check(TranslationServer.translate("Fermer") == "Close", "texte d'interface traduit")
+	check(cat.powers.signe.name == "Heavenly sign" and cat.traits[cat.trait_order[0]].name != cat.traits[cat.trait_order[0]].name_fr, "catalogue traduit en place")
+	var w = make_world(5)
+	w.run_years(5)
+	check(w.peoples.size() == 3, "la simulation ne dépend pas de la langue")
+	# Cohérence des gabarits : mêmes codes de format, dans le même ordre.
+	var rx := RegEx.new()
+	rx.compile("%[-+0#]*\\d*(?:\\.\\d+)?[dsfx%]")
+	var bad := []
+	var dict: Dictionary = I18n.load_dict("en")
+	for k in dict:
+		var a := rx.search_all(k).map(func(m): return m.get_string())
+		var b := rx.search_all(str(dict[k])).map(func(m): return m.get_string())
+		if a != b:
+			bad.append(k)
+	check(bad.is_empty(), "codes de format identiques dans les traductions (%d écarts)" % bad.size())
+	I18n.apply("fr", cat)
+	check(cat.powers.signe.name == "Signe céleste" and TranslationServer.translate("Fermer") == "Fermer", "retour au français")
 
 func test_delayed_effect() -> void:
 	var w = make_world()

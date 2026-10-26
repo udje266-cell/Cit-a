@@ -65,6 +65,27 @@ func load_all() -> void:
 		power_order.append(p.id)
 	_validate()
 
+## Traduit en place les textes affichés du catalogue (clé = texte français d'origine, conservé dans « <champ>_fr »).
+## Un dictionnaire vide rétablit le français. La simulation ne dépend que des identifiants, jamais de ces textes.
+func localize(dict: Dictionary) -> void:
+	var lists: Array = [species.values(), traits.values(), temporary.values(), techs.values(), powers.values(), achievements]
+	for items in lists:
+		for it in items:
+			for f in ["name", "desc", "interactions"]:
+				if it.has(f) or it.has(f + "_fr"):
+					if not it.has(f + "_fr"):
+						it[f + "_fr"] = it[f]
+					it[f] = dict.get(it[f + "_fr"], it[f + "_fr"])
+	if not has_meta("labels_fr"):
+		set_meta("labels_fr", [power_families.duplicate(), trait_categories.duplicate(), eras.duplicate()])
+	var orig: Array = get_meta("labels_fr")
+	for k in power_families:
+		power_families[k] = dict.get(orig[0][k], orig[0][k])
+	for k in trait_categories:
+		trait_categories[k] = dict.get(orig[1][k], orig[1][k])
+	for i in eras.size():
+		eras[i] = dict.get(orig[2][i], orig[2][i])
+
 func _validate() -> void:
 	for id in traits:
 		for x in traits[id].get("incompat", []):
