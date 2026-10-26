@@ -270,3 +270,91 @@ func figure_mesh(people_col: Color, affinity: String) -> ArrayMesh:
 	var m := b.to_mesh()
 	_cache[key] = m
 	return m
+
+# ------------------------------------------------------------------ Vie du monde : ports, bateaux, convois, repères d'époque
+
+func boat_mesh(people_col: Color, era: int) -> ArrayMesh:
+	var key := "boat_%s_%d" % [people_col.to_html(false), mini(era, 4)]
+	if _cache.has(key):
+		return _cache[key]
+	var b := LowPoly.new()
+	var hull := TRUNK.lightened(0.1)
+	b.facet_prism(LowPoly.T(Vector3(0, 0, 0), Vector3(0.5, 1.0, 1.4)), 0.18, 0.3, 0.16, 6, hull)
+	b.box(LowPoly.T(Vector3(0, 0.12, 0)), Vector3(0.04, 0.7, 0.04), TRUNK)
+	if era >= 4:
+		# Navire à vapeur / à éther : cheminée et pont.
+		b.box(LowPoly.T(Vector3(0, 0.16, -0.1)), Vector3(0.36, 0.18, 0.5), Color(0.86, 0.84, 0.8))
+		b.facet_prism(LowPoly.T(Vector3(0, 0.34, -0.1)), 0.06, 0.06, 0.3, 6, Color(0.3, 0.3, 0.32))
+	else:
+		b.quad(Vector3(0, 0.2, 0.02), Vector3(0, 0.8, 0.02), Vector3(0.0, 0.8, 0.32), Vector3(0, 0.2, 0.4), people_col.lightened(0.4))
+		_double_sided(b)
+	var m := b.to_mesh()
+	_cache[key] = m
+	return m
+
+func dock_mesh() -> ArrayMesh:
+	if _cache.has("dock"):
+		return _cache.dock
+	var b := LowPoly.new()
+	b.box(LowPoly.T(Vector3(0, 0.05, 0)), Vector3(0.3, 0.05, 1.0), TRUNK.lightened(0.18))
+	for z in [-0.4, 0.0, 0.4]:
+		for x in [-0.12, 0.12]:
+			b.facet_prism(LowPoly.T(Vector3(x, -0.25, z)), 0.03, 0.03, 0.35, 5, TRUNK)
+	var m := b.to_mesh()
+	_cache.dock = m
+	return m
+
+func cart_mesh(people_col: Color) -> ArrayMesh:
+	var key := "cart_%s" % people_col.to_html(false)
+	if _cache.has(key):
+		return _cache[key]
+	var b := LowPoly.new()
+	b.box(LowPoly.T(Vector3(0, 0.12, 0)), Vector3(0.4, 0.2, 0.7), TRUNK.lightened(0.1))
+	b.gable(LowPoly.T(Vector3(0, 0.32, 0)), Vector3(0.44, 0.24, 0.72), Color(0.92, 0.88, 0.78))
+	b.box(LowPoly.T(Vector3(0, 0.3, 0.37)), Vector3(0.3, 0.06, 0.02), people_col)
+	for x in [-0.22, 0.22]:
+		for z in [-0.22, 0.22]:
+			b.facet_prism(LowPoly.T(Vector3(x, 0.0, z)), 0.08, 0.08, 0.04, 6, TRUNK.darkened(0.2))
+	var m := b.to_mesh()
+	_cache[key] = m
+	return m
+
+## Repère d'époque selon la voie : science (moulin, puis tour à cheminées), magie (tour de mage, cristaux flottants),
+## hybride (observatoire). Construit à partir de l'époque 2.
+func landmark_mesh(lean: float, era: int, people_col: Color) -> ArrayMesh:
+	var path := "science" if lean > 0.2 else ("magic" if lean < -0.2 else "hybrid")
+	var key := "lm_%s_%d_%s" % [path, mini(era, 5), people_col.to_html(false)]
+	if _cache.has(key):
+		return _cache[key]
+	var b := LowPoly.new()
+	var stone := Color(0.8, 0.77, 0.7)
+	match path:
+		"science":
+			if era < 4:
+				b.facet_prism(LowPoly.T(Vector3.ZERO), 0.3, 0.2, 0.9, 8, stone)
+				b.facet_prism(LowPoly.T(Vector3(0, 0.9, 0)), 0.26, 0.0, 0.3, 8, Color(0.55, 0.35, 0.25))
+				for i in 4:
+					var a := TAU * i / 4.0 + 0.3
+					b.box(Transform3D(Basis(Vector3(0, 0, 1), a), Vector3(0, 0.8, 0.24)), Vector3(0.08, 0.7, 0.02), Color(0.93, 0.9, 0.82))
+			else:
+				b.box(LowPoly.T(Vector3.ZERO), Vector3(0.8, 0.6, 0.6), Color(0.62, 0.42, 0.35))
+				b.box(LowPoly.T(Vector3(0, 0.6, 0)), Vector3(0.82, 0.06, 0.62), people_col)
+				for x in [-0.25, 0.05, 0.3]:
+					b.facet_prism(LowPoly.T(Vector3(x, 0.6, -0.1)), 0.07, 0.06, 0.8 if era >= 5 else 0.6, 6, Color(0.35, 0.33, 0.33))
+		"magic":
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.26, 0.18, 1.3, 7, Color(0.62, 0.6, 0.72))
+			b.facet_prism(LowPoly.T(Vector3(0, 1.3, 0)), 0.3, 0.0, 0.5, 7, Color(0.42, 0.28, 0.62))
+			b.facet_blob(LowPoly.T(Vector3(0, 2.0, 0), Vector3(0.12, 0.24, 0.12)), Color(0.75, 0.5, 1.0), 0)
+			if era >= 4:
+				for i in 3:
+					var a2 := TAU * i / 3.0
+					b.facet_blob(LowPoly.T(Vector3(cos(a2) * 0.5, 1.5 + i * 0.12, sin(a2) * 0.5), Vector3(0.07, 0.16, 0.07)), Color(0.6, 0.85, 1.0), 0)
+		_:
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.4, 0.4, 0.5, 10, stone)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.5, 0), Vector3(0.4, 0.32, 0.4)), Color(0.55, 0.62, 0.7), 1)
+			b.box(Transform3D(Basis(Vector3(0, 0, 1), 0.6), Vector3(0.15, 0.75, 0)), Vector3(0.08, 0.4, 0.08), Color(0.8, 0.65, 0.3))
+			if era >= 4:
+				b.facet_blob(LowPoly.T(Vector3(0, 1.1, 0), Vector3(0.1, 0.1, 0.1)), Color(0.9, 0.8, 1.0), 0)
+	var m := b.to_mesh()
+	_cache[key] = m
+	return m

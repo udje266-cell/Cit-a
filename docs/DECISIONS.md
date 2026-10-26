@@ -103,3 +103,16 @@ fidèles et son dieu continuent. Coût : ≈ 40 ms par an simulé avec ~15 peupl
 - **Effets visuels** (`game/power_fx.gd`) : un jeu de particules CPU par type d'effet (pluie, aurore, éruption, gel,
   hélice ADN, source…), sprites doux, lumière ponctuelle et tremblement de caméra pour séisme et éruption ; chaque
   effet se détruit seul. Planche : `docs/captures/effets_pouvoirs.png` (`tests/fx_shots.gd`).
+
+## D44 — Vie visible du monde (`game/world_life.gd`) et repères d'époque
+Purement visuel : la simulation n'en dépend pas (seul ajout : le champ `from` d'un établissement, son village d'origine).
+- **Routes** : chaque village est relié à ses deux plus proches voisins du même peuple (≤ 0,3) par un ruban posé
+  sur le relief ; terre battue, pavées à partir de l'époque 2 ; pas de route sur l'eau.
+- **Ports et bateaux** : un village côtier dont le peuple connaît la navigation a un ponton et 1–2 bateaux qui
+  tournent au large (voile aux couleurs du peuple ; vapeur à partir de l'époque 4).
+- **Convois** : un nouvel établissement fait partir une charrette de son village d'origine (4 s de trajet).
+- **Habitants** : jusqu'à 8 passants par village proche de la caméra (vue rapprochée seulement), sur l'anneau des chemins.
+- **Repère d'époque** (époque ≥ 2, plus de 60 habitants) : voie scientifique → moulin puis manufacture à
+  cheminées ; magique → tour de mage puis cristaux flottants ; hybride → observatoire.
+- Captures : `docs/captures/vie_region.png`, `vie_village.png` (`tests/life_shots.gd`).
+- Limite : les colons partent et arrivent la même année dans la simulation ; le convoi n'en est qu'une illustration.

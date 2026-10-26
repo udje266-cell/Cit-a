@@ -17,6 +17,7 @@ const Faith = preload("res://sim/faith_system.gd")
 const Genetics = preload("res://sim/genetics.gd")
 const WorldArt = preload("res://game/world_art.gd")
 const PowerFx = preload("res://game/power_fx.gd")
+const WorldLife = preload("res://game/world_life.gd")
 
 const OVERLAYS := {"terrain": "Terrain", "peoples": "Peuples", "borders": "Frontières", "religion": "Religions",
 	"resources": "Ressources", "climate": "Climat", "fertility": "Fertilité", "conflicts": "Conflits",
@@ -110,6 +111,7 @@ var _border_sig := ""
 var _pulse_left := 0.0
 var _cam_dir := Vector3.FORWARD
 var fx: Node3D
+var life: Node3D
 var _cam_dist := 3.0
 
 # ------------------------------------------------------------------ Mise en place
@@ -124,6 +126,9 @@ func setup(p_world) -> void:
 	add_child(fx)
 	_village_nodes = {}
 	_make_materials()
+	life = WorldLife.new()
+	add_child(life)
+	life.setup(self, world)
 	var sd: int = world.planet.seed_value
 	_noise_low.seed = sd + 5
 	_noise_low.frequency = 3.0
@@ -977,6 +982,10 @@ func _build_villages() -> void:
 		if p.techs.has("poterie") or p.techs.has("agriculture") or p.techs.has("outils_pierre"):
 			var a3 := float(sp[2]) + PI / 3.0
 			_add_inst(lists, _bkey("production", p, era), _bmesh("production", p, era, pc), _place_facing(center, a3, R * 0.82, cell, vi, bsc))
+		# Repère d'époque (à partir de l'époque 2) : moulin ou tour à cheminées, tour de mage, observatoire.
+		if era >= 2 and pop > 60:
+			var a4 := float(sp[0]) - PI / 3.0
+			_add_inst(lists, "lm_%d_%d" % [int(p.id), era], art.landmark_mesh(float(p.lean), era, pc), _place_facing(center, a4, R * 0.9, cell, vi, bsc * 1.2))
 		# Habitations : nombre ∝ √population, sur des anneaux, hors des chemins, portes vers la place.
 		var count := clampi(int(round(sqrt(pop) / 1.7)), 1, 24)
 		var placed := 0
@@ -1217,6 +1226,7 @@ func refresh(force: bool = false) -> void:
 	_build_villages()
 	_update_labels()
 	_update_borders()
+	life.rebuild()
 	_built_version = pl.version
 	last_build_ms = (Time.get_ticks_usec() - t0) / 1000.0
 
@@ -1240,6 +1250,7 @@ func update_view(cam_pos: Vector3) -> void:
 	if new_lod != lod:
 		lod = new_lod
 		_build_villages()
+		life.rebuild()
 	var horizon := 1.0 / _cam_dist
 	for g in _group_count:
 		var vis: bool = _group_center[g].dot(_cam_dir) > horizon - 0.6

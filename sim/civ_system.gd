@@ -220,6 +220,7 @@ static func _try_expand(w, s: Dictionary, cfg: Dictionary, st: Dictionary, k: fl
 	var frac := float(cfg.split_fraction)
 	var moving := pop * frac
 	var ns: Dictionary = w._new_settlement(int(s.people), best, moving, Genetics.founder_effect(s.freqs, w.rng))
+	ns["from"] = int(s.id)
 	ns.aff = Affinity.split_counts(s, frac)
 	ns.aff_src = Affinity.split_sources(s, frac)
 	ns.faith = s.faith.duplicate()
