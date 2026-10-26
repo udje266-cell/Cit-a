@@ -54,3 +54,18 @@ Toute décision qui la contredit doit d'abord modifier ce fichier.
 
 - Titre définitif du jeu (« Cit-a » = nom du dépôt, utilisé provisoirement).
 - Langue : interface en **français** au jalon 1 ; textes centralisés pour une traduction ultérieure.
+
+## D40 — Diplomatie entre peuples et entre dieux (`sim/diplomacy.gd`)
+- Remplace `Civ._relations`. Tous les 2 ans, chaque paire de peuples en contact évolue selon les tempéraments,
+  la religion (malus si fanatisme), les relations et pactes de leurs dieux et le commerce.
+- Traités : accord commercial (ressources complémentaires, mises en commun pour les découvertes, vivres envoyés
+  en cas de famine), non-agression de 25 ans, alliance (les alliés entrent en guerre ensemble).
+- Guerre : cause « frontière », « religion » ou « alliance ». La conquête fait changer de peuple l'établissement le
+  plus proche, qui **garde son espèce** (royaumes multi-espèces). Une guerre de religion impose en partie la foi du vainqueur.
+  La paix entraîne un tribut de 12 ans quand le rapport de forces est net.
+- Union : après 30 ans d'alliance (relation ≥ 0,85, même foi), un peuple trois fois plus petit rejoint son allié
+  (`merged_into`).
+- Diplomatie divine : le joueur propose un pacte pour 5 énergie (chance selon la relation, la bienveillance et
+  l'agressivité) ou le rompt (relation −0,5). Les dieux rivaux concluent des pactes entre eux au-delà de 0,5.
+- Vérifié sur 2 parties de 500 ans : guerres et paix (11/11), alliances, pactes et accords apparaissent. Conquêtes et
+  unions restent rares ; leur réglage relève de l'équilibrage (tâche suivante).

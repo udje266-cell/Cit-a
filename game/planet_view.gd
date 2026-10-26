@@ -988,7 +988,7 @@ func _build_villages() -> void:
 					ok = false
 			if not ok:
 				continue
-			_add_inst(lists, _bkey("house", p, era), _bmesh("house", p, era, pc), _place_facing(center, ang, rad, cell, vi, bsc * rng.randf_range(0.85, 1.0)))
+			_add_inst(lists, _bkey("house", p, era) + str(s.get("species", "")), _bmesh("house", p, era, pc, str(s.get("species", ""))), _place_facing(center, ang, rad, cell, vi, bsc * rng.randf_range(0.85, 1.0)))
 			# Abords : terre battue entre la porte et la place.
 			var ydir := (center + _tangent(vi, ang) * (rad - R * 0.17)).normalized()
 			_add_inst(lists, "path", art.prop_mesh("path"), _flat(ydir, center, ang, Vector3(R * 0.13, 1.0, R * 0.2), cell))
@@ -1028,7 +1028,7 @@ func _build_villages() -> void:
 				_add_inst(lists, "wall_%s" % stone, art.wall_mesh(stone), Transform3D(basis2, dir2 * (surface_radius(dir2, cell) - 0.0004)))
 		# Habitants représentatifs (de près), tirés des distributions réelles de l'établissement.
 		if lod == 2 and center.dot(_cam_dir) > 0.97:
-			var inds: Array = Genetics.representatives(world.cat, s, p.species, 6, int(s.id) * 31 + world.year)
+			var inds: Array = Genetics.representatives(world.cat, s, str(s.get("species", p.species)), 6, int(s.id) * 31 + world.year)
 			for i in inds.size():
 				var ang3 := TAU * i / inds.size() + 0.4
 				var dir3 := (center + _tangent(vi, ang3) * R * 0.2).normalized()
@@ -1065,8 +1065,8 @@ func _flat(dir: Vector3, center: Vector3, ang: float, scale: Vector3, hint: int)
 func _bkey(kind: String, p: Dictionary, era: int) -> String:
 	return "b_%s_%d_%d" % [kind, int(p.id), era]
 
-func _bmesh(kind: String, p: Dictionary, era: int, pc: Color) -> Mesh:
-	return art.building_mesh(kind, p.species, era, pc, float(p.lean))
+func _bmesh(kind: String, p: Dictionary, era: int, pc: Color, species: String = "") -> Mesh:
+	return art.building_mesh(kind, species if species != "" else p.species, era, pc, float(p.lean))
 
 func _add_inst(lists: Dictionary, key: String, mesh: Mesh, xf: Transform3D) -> void:
 	if not lists.has(key):

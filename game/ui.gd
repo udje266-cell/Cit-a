@@ -8,6 +8,7 @@ const Genetics = preload("res://sim/genetics.gd")
 const Civ = preload("res://sim/civ_system.gd")
 const Faith = preload("res://sim/faith_system.gd")
 const Powers = preload("res://sim/powers.gd")
+const Diplomacy = preload("res://sim/diplomacy.gd")
 const Planet = preload("res://sim/planet.gd")
 const PlanetView = preload("res://game/planet_view.gd")
 const Icons = preload("res://game/icons.gd")
@@ -741,7 +742,22 @@ func show_people(pid: int) -> void:
 		var k: String = world.rel_key(pid, int(o.id))
 		if world.relations.has(k):
 			var r: Dictionary = world.relations[k]
-			t += "  %s : %.2f%s%s\n" % [o.name, float(r.value), " — GUERRE" if r.war else "", " — alliance" if r.alliance else ""]
+			var tags := PackedStringArray()
+			if r.war:
+				tags.append("GUERRE (%s)" % str(r.get("war_cause", "frontière")))
+			if r.alliance:
+				tags.append("alliance")
+			if r.get("trade", false):
+				tags.append("commerce")
+			if int(r.get("pact_until", -1)) >= world.year and not r.war:
+				tags.append("non-agression jusqu'en %d" % int(r.pact_until))
+			var tr: Dictionary = r.get("tribute", {})
+			if not tr.is_empty():
+				tags.append("tribut %s jusqu'en %d" % ["versé" if int(tr.payer) == pid else "reçu", int(tr.until)])
+			t += "  %s : %.2f%s\n" % [o.name, float(r.value), "" if tags.is_empty() else " — " + ", ".join(tags)]
+	for o in world.peoples:
+		if int(o.get("merged_into", -1)) == pid:
+			t += "  %s a rejoint ce royaume (union)\n" % o.name
 	t += "\n[b]Histoire[/b]\n"
 	for hst in p.history.slice(maxi(0, p.history.size() - 15)):
 		t += "  An %d — %s\n" % [int(hst.year), hst.text]
@@ -762,7 +778,7 @@ func show_individuals(sid: int) -> void:
 	var p: Dictionary = world.peoples[int(s.people)]
 	var body := open_modal("Habitants représentatifs de " + s.name)
 	body.add_child(_rich("[i]Individus tirés de la distribution réelle de l'établissement : traits selon leurs fréquences, affinité et origine selon les comptes de naissances (simulation agrégée).[/i]\n" + affinity_origin_summary(s)))
-	for ind in Genetics.representatives(world.cat, s, p.species, 6, sid * 31 + world.year):
+	for ind in Genetics.representatives(world.cat, s, str(s.get("species", p.species)), 6, sid * 31 + world.year):
 		var t := "[b]%s[/b], %d ans — [color=#ffd966]%s[/color]\n" % [ind.name, int(ind.age), Affinity.NAMES[ind.affinity]]
 		if ind.affinity != "none":
 			t += "  Origine de l'affinité : %s\n" % Affinity.source_label(str(ind.origin))
@@ -788,8 +804,20 @@ func show_deity(did: int) -> void:
 	t += "\n[b]Relations divines[/b]\n"
 	for o in world.deities:
 		if int(o.id) != did:
-			t += "  %s : %.2f\n" % [o.name, float(d.relations.get(str(o.id), 0.0))]
+			t += "  %s : %.2f%s\n" % [o.name, float(d.relations.get(str(o.id), 0.0)), " · pacte" if d.get("pacts", {}).has(str(o.id)) else ""]
 	body.add_child(_rich(t))
+	if not d.is_player:
+		var me: Dictionary = world.deities[world.player_deity]
+		if me.get("pacts", {}).has(str(did)):
+			body.add_child(_button("Rompre le pacte", func():
+				Diplomacy.break_pact(world, world.player_deity, did)
+				show_toast("Pacte rompu avec %s" % d.name)
+				show_deity(did)))
+		else:
+			body.add_child(_button("Proposer un pacte (5 énergie)", func():
+				var res: Dictionary = Diplomacy.propose_pact(world, world.player_deity, did)
+				show_toast(res.msg)
+				show_deity(did)))
 
 # ------------------------------------------------------------------ Affinités : règles automatiques
 

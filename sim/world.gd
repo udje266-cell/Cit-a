@@ -9,6 +9,7 @@ const Civ = preload("res://sim/civ_system.gd")
 const Faith = preload("res://sim/faith_system.gd")
 const Powers = preload("res://sim/powers.gd")
 const RivalAI = preload("res://sim/rival_ai.gd")
+const Diplomacy = preload("res://sim/diplomacy.gd")
 
 const SAVE_VERSION := 1
 const LOG_MAX := 400
@@ -165,7 +166,7 @@ func _too_close(cell: int, dist: int) -> bool:
 func _new_settlement(pid: int, cell: int, pop: float, freqs: Dictionary) -> Dictionary:
 	var id := settlements.size()
 	var p: Dictionary = peoples[pid]
-	var s := {"id": id, "name": Genetics.make_name(rng, p.species), "people": pid, "cell": cell, "pop": pop,
+	var s := {"id": id, "name": Genetics.make_name(rng, p.species), "people": pid, "species": p.species, "cell": cell, "pop": pop,
 		"birth_acc": 0.0, "aff": Affinity.empty_counts(), "mastery": {"magic": 0.0, "sword": 0.0}, "training": 0.0,
 		"freqs": freqs, "faith": {}, "fervor": 0.5, "memory": {}, "statuses": {}, "stability": 0.6,
 		"food": pop * 2.0, "capacity": 10.0, "territory": [cell], "founded": year, "alive": true,
@@ -234,7 +235,7 @@ func tick_step(budget_usec: int) -> bool:
 		if Time.get_ticks_usec() - start > budget_usec:
 			return false
 	if _phase == 3:
-		Civ._relations(self)
+		Diplomacy.tick(self)
 		Civ._check_extinction(self)
 		_phase = 4
 		if Time.get_ticks_usec() - start > budget_usec:
@@ -393,6 +394,8 @@ func _normalize_numbers() -> void:
 		if not s.has("aff_src"):
 			s["aff_src"] = Affinity.empty_sources()
 		s["prev_pop"] = float(s.get("prev_pop", s.pop))
+		if not s.has("species"):
+			s["species"] = peoples[int(s.people)].species
 		for k in ["id", "people", "cell", "founded", "last_gen", "last_help"]:
 			s[k] = int(s[k])
 		s.territory = s.territory.map(func(c): return int(c))

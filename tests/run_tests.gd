@@ -10,6 +10,8 @@ const Affinity = preload("res://sim/affinity.gd")
 const Powers = preload("res://sim/powers.gd")
 const Faith = preload("res://sim/faith_system.gd")
 const SaveSystem = preload("res://sim/save_system.gd")
+const Civ = preload("res://sim/civ_system.gd")
+const Diplomacy = preload("res://sim/diplomacy.gd")
 
 var passed := 0
 var failed := 0
@@ -23,7 +25,7 @@ func _init() -> void:
 		"test_birth_split", "test_natural_never_both", "test_natural_distribution",
 		"test_no_divine_attribution", "test_rule_attribution", "test_parents_both_not_inherited",
 		"test_genetics_never_touch_affinity", "test_late_grant", "test_manual_orders", "test_budget_limit",
-		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_growth_bounded", "test_powers", "test_delayed_effect",
+		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_growth_bounded", "test_powers", "test_delayed_effect",
 		"test_conversion", "test_weak_deity_return", "test_save_roundtrip", "test_save_files",
 		"test_migration_v0", "test_export_import", "test_offline", "test_benchmark",
 	]
@@ -328,6 +330,62 @@ func test_large_world() -> void:
 	check(w.peoples.size() == 5, "grand monde : 4 peuples rivaux")
 	w.run_years(60)
 	check(w.alive_settlements().size() >= 5, "grand monde : la simulation tourne (%d établissements)" % w.alive_settlements().size())
+
+func test_diplomacy() -> void:
+	var w = make_world(31)
+	w.run_years(20)
+	var a := 0
+	var b := 1
+	# Commerce : les ressources du partenaire comptent pour les découvertes.
+	var r: Dictionary = w.relation(a, b)
+	var res_b: Dictionary = Diplomacy.resources_of(w, b)
+	r.trade = true
+	var agg: Dictionary = Civ.people_aggregate(w, w.peoples[a])
+	var all_in := true
+	for k in res_b:
+		if not agg.resources.has(k):
+			all_in = false
+	check(all_in, "commerce : les ressources du partenaire (%d) sont accessibles" % res_b.size())
+	check(Diplomacy.trade_partners(w, a).has(b), "commerce : partenaire listé")
+	r.trade = false
+	# Conquête : l'établissement change de peuple et garde son espèce.
+	var target: Dictionary = w.people_settlements(b)[0]
+	var sp: String = Civ.species_of(w, target)
+	target.cell = int(w.people_settlements(a)[0].cell)
+	r.war = true
+	r.war_cause = "religion"
+	Diplomacy._conquer(w, a, b, r)
+	check(int(target.people) == a, "conquête : l'établissement rejoint le vainqueur")
+	check(Civ.species_of(w, target) == sp and sp != w.peoples[a].species, "conquête : l'espèce est conservée (%s)" % sp)
+	r.war = false
+	# Fusion : alliance ancienne, même foi, petit peuple.
+	var r2: Dictionary = w.relation(a, 2)
+	r2.alliance = true
+	r2.value = 0.95
+	r2.allied_since = w.year - 40
+	for s2 in w.people_settlements(2):
+		s2.pop = minf(1.0, w.people_pop(a) / 4.0)
+		s2.faith = {str(Civ._main_religion(w, a)): 1.0}
+	w.year = (w.year / 10 + 1) * 10
+	Diplomacy._mergers(w)
+	check(bool(w.peoples[2].extinct) and int(w.peoples[2].get("merged_into", -1)) == a, "fusion : le petit peuple rejoint son allié")
+	# Pacte divin : accepté quand la relation est excellente, refusé sans énergie.
+	var me: Dictionary = w.deities[w.player_deity]
+	var other := 1 if w.player_deity == 0 else 0
+	w.deities[other].relations[str(w.player_deity)] = 1.0
+	w.deities[other].personality.aggression = 0.0
+	me.energy = 100.0
+	var ok := false
+	for i in 10:
+		if Diplomacy.propose_pact(w, w.player_deity, other).ok:
+			ok = true
+			break
+	check(ok and me.pacts.has(str(other)), "pacte divin accepté avec une bonne relation")
+	Diplomacy.break_pact(w, w.player_deity, other)
+	me.energy = 1.0
+	check(not Diplomacy.propose_pact(w, w.player_deity, other).ok, "pacte refusé sans énergie")
+	w.run_years(30)
+	check(true, "la simulation continue après conquête et fusion")
 
 func test_reload_no_reroll() -> void:
 	var w = make_world(77)

@@ -10,12 +10,16 @@ const Planet = preload("res://sim/planet.gd")
 
 # ------------------------------------------------------------------ Établissement
 
+## Espèce d'un établissement (un royaume peut réunir plusieurs espèces après fusion ou conquête).
+static func species_of(w, s: Dictionary) -> String:
+	return str(s.get("species", w.peoples[int(s.people)].species))
+
 static func stats_of(w, s: Dictionary) -> Dictionary:
 	var key := "st%d" % int(s.id)
 	if w.tick_cache.has(key):
 		return w.tick_cache[key]
 	var p: Dictionary = w.peoples[int(s.people)]
-	var st := Genetics.effective_stats(w.cat, p.species, s.freqs, p.culture, s.statuses)
+	var st := Genetics.effective_stats(w.cat, species_of(w, s), s.freqs, p.culture, s.statuses)
 	w.tick_cache[key] = st
 	return st
 
@@ -43,7 +47,7 @@ static func cell_food(w, cell: int, species_id: String, st: Dictionary, fx: Dict
 	return food
 
 static func capacity(w, s: Dictionary, st: Dictionary, fx: Dictionary) -> float:
-	var sp: String = w.peoples[int(s.people)].species
+	var sp: String = species_of(w, s)
 	var total := 0.0
 	for c in s.territory:
 		total += cell_food(w, int(c), sp, st, fx)
@@ -54,7 +58,7 @@ static func capacity(w, s: Dictionary, st: Dictionary, fx: Dictionary) -> float:
 
 static func _settlement_year(w, s: Dictionary, cfg: Dictionary, fx: Dictionary) -> void:
 	var p: Dictionary = w.peoples[int(s.people)]
-	var sp: Dictionary = w.cat.species[p.species]
+	var sp: Dictionary = w.cat.species[species_of(w, s)]
 	var st := stats_of(w, s)
 	var pop := float(s.pop)
 	s.prev_pop = pop
@@ -206,7 +210,7 @@ static func _try_expand(w, s: Dictionary, cfg: Dictionary, st: Dictionary, k: fl
 		if crowded:
 			continue
 		var d: float = w.planet.pos[c].distance_to(w.planet.pos[int(s.cell)])
-		var sc: float = cell_food(w, c, p.species, st, fx) - d * 0.6 + w.rng.randf() * 0.05
+		var sc: float = cell_food(w, c, species_of(w, s), st, fx) - d * 0.6 + w.rng.randf() * 0.05
 		if sc > best_score:
 			best_score = sc
 			best = c
@@ -302,6 +306,21 @@ static func people_aggregate(w, p: Dictionary) -> Dictionary:
 			ncell += 1
 			if w.planet.is_coastal(int(c)):
 				coastal = true
+	# Ressources obtenues par commerce (accords actifs, hors guerre).
+	for k in w.relations:
+		var r: Dictionary = w.relations[k]
+		if r.get("trade", false) and not r.war:
+			var parts: PackedStringArray = k.split(":")
+			var other := -1
+			if int(parts[0]) == int(p.id):
+				other = int(parts[1])
+			elif int(parts[1]) == int(p.id):
+				other = int(parts[0])
+			if other >= 0:
+				for os in w.people_settlements(other):
+					for c in os.territory:
+						for rr in w.planet.res_list(int(c)):
+							res[rr] = true
 	var tot := maxf(pop, 1.0)
 	return {"pop": pop, "stability": stab / tot, "resources": res, "fertility": fert / maxf(ncell, 1),
 		"coastal": coastal, "share_magic": magic / tot, "share_sword": sword / tot, "magic_mastered": mm}

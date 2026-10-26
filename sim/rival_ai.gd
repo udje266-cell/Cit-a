@@ -99,7 +99,11 @@ static func _diplomacy(w) -> void:
 			var old := float(a.relations.get(str(b.id), 0.0))
 			a.relations[str(b.id)] = v
 			b.relations[str(a.id)] = v
-			if old <= 0.5 and v > 0.5:
+			if old <= 0.5 and v > 0.5 and not (a.is_player or b.is_player):
+				if not a.has("pacts"): a["pacts"] = {}
+				if not b.has("pacts"): b["pacts"] = {}
+				a.pacts[str(b.id)] = w.year
+				b.pacts[str(a.id)] = w.year
 				w.add_log("Pacte divin : %s et %s" % [a.name, b.name], "Préférences compatibles (relation %.2f) ; leurs peuples se rapprochent" % v, "diplomacy", -1)
 			elif old >= -0.5 and v < -0.5:
 				w.add_log("Rivalité divine : %s et %s" % [a.name, b.name], "Concurrence pour les mêmes fidèles ou tempéraments opposés (%.2f)" % v, "diplomacy", -1)
