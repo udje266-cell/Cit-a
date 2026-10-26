@@ -1144,6 +1144,7 @@ func show_game_menu() -> void:
 		show_message("Sauvegarde", ["Monde sauvegardé."])))
 	body.add_child(_button("Exporter le monde initial (planète à découvrir)", func(): show_message("Export", [main.export_world("seed")])))
 	body.add_child(_button("Exporter le monde évolué (partie complète)", func(): show_message("Export", [main.export_world("evolved")])))
+	body.add_child(_button("Enregistrer une copie sur l'appareil…", main.export_to_device.bind("evolved")))
 	var share := Button.new()
 	share.text = "Partage en ligne — non connecté"
 	share.disabled = true
@@ -1211,7 +1212,9 @@ func show_main_menu(worlds: Array, exports: Array) -> void:
 		row.add_child(_button("Continuer", main.continue_world.bind(m.id)))
 		row.add_child(_button("Supprimer", main.delete_world.bind(m.id)))
 		body.add_child(row)
-	body.add_child(_rich("\n[b]Importer un fichier .cworld[/b] (dossier des exports du jeu)"))
+	body.add_child(_rich("\n[b]Importer un fichier .cworld[/b]"))
+	body.add_child(_button("Choisir un fichier sur l'appareil…", main.pick_import_file))
+	body.add_child(_rich("Ou un fichier déjà dans le dossier des exports du jeu :"))
 	if exports.is_empty():
 		body.add_child(_rich("Aucun fichier exporté."))
 	for path in exports:

@@ -27,7 +27,7 @@ func _init() -> void:
 		"test_birth_split", "test_natural_never_both", "test_natural_distribution",
 		"test_no_divine_attribution", "test_rule_attribution", "test_parents_both_not_inherited",
 		"test_genetics_never_touch_affinity", "test_late_grant", "test_manual_orders", "test_budget_limit",
-		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_history", "test_new_powers", "test_climate", "test_audio_synth", "test_growth_bounded", "test_powers", "test_delayed_effect",
+		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_history", "test_new_powers", "test_climate", "test_audio_synth", "test_external_file", "test_growth_bounded", "test_powers", "test_delayed_effect",
 		"test_conversion", "test_weak_deity_return", "test_save_roundtrip", "test_save_files",
 		"test_migration_v0", "test_export_import", "test_offline", "test_benchmark",
 	]
@@ -536,6 +536,19 @@ func test_audio_synth() -> void:
 		peak2 = maxf(peak2, absf(v))
 	check(loop.size() == Audio.RATE * 4 and peak2 > 0.05 and peak2 <= 1.0, "boucle musicale : durée exacte, sans saturation (crête %.2f)" % peak2)
 	print("    génération musicale : %d ms pour 4 s (fil secondaire en jeu)" % ms)
+
+func test_external_file() -> void:
+	var w = make_world(3)
+	w.run_years(10)
+	var path := SaveSystem.export_world(w, "evolved")
+	var outside := OS.get_cache_dir().path_join("cit_a_test_copie.cworld")
+	check(SaveSystem.copy_file(path, outside), "copie de l'export hors du dossier du jeu")
+	var local := SaveSystem.copy_into_exports(outside)
+	check(local.begins_with("user://exports/"), "fichier externe recopié dans les exports")
+	var r: Dictionary = SaveSystem.import_file(local)
+	check(not r.has("error") and int(r.world.year) == int(w.year), "le fichier externe s'importe (an %d)" % int(w.year))
+	check(SaveSystem.copy_into_exports("/chemin/inexistant.cworld") == "", "fichier introuvable : échec propre")
+	DirAccess.remove_absolute(outside)
 
 func test_delayed_effect() -> void:
 	var w = make_world()

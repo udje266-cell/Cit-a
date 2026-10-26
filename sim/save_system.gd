@@ -140,6 +140,29 @@ static func export_world(w, kind: String) -> String:
 	var path := "%s/%s_%s_an%d%s" % [EXPORTS, safe, kind, w.year, EXT]
 	return path if _write_compressed(path, data) else ""
 
+## Copie d'un fichier quelconque (chemin ou adresse fournie par le sélecteur du système). Vrai si réussi.
+static func copy_file(src: String, dest: String) -> bool:
+	var f := FileAccess.open(src, FileAccess.READ)
+	if f == null:
+		return false
+	var data := f.get_buffer(f.get_length())
+	f.close()
+	var o := FileAccess.open(dest, FileAccess.WRITE)
+	if o == null:
+		return false
+	o.store_buffer(data)
+	o.close()
+	return true
+
+## Copie un fichier choisi sur l'appareil dans le dossier des exports du jeu ; renvoie le chemin local ou "".
+static func copy_into_exports(src: String) -> String:
+	DirAccess.make_dir_recursive_absolute(EXPORTS)
+	var name := src.get_file().validate_filename()
+	if not name.ends_with(EXT):
+		name += EXT
+	var dest := "%s/%s" % [EXPORTS, name]
+	return dest if copy_file(src, dest) else ""
+
 ## Retourne {kind, world} (monde prêt) ou {error}.
 static func import_file(path: String) -> Dictionary:
 	var d := _read_compressed(path)

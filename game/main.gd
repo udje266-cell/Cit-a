@@ -151,6 +151,64 @@ func delete_world(id: String) -> void:
 	SaveSystem.delete_world(id)
 	_show_menu()
 
+## Sélecteur de fichier de l'appareil : natif quand le système en fournit un (Android, bureau),
+## sinon la boîte de dialogue intégrée de Godot. Le fichier choisi est d'abord copié dans les exports du jeu
+## (sur Android, le sélecteur peut renvoyer une adresse « content:// » lisible une seule fois).
+func pick_import_file() -> void:
+	var filters := PackedStringArray(["*.cworld ; Monde Cit-a"])
+	if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_FILE):
+		DisplayServer.file_dialog_show("Importer un monde", OS.get_system_dir(OS.SYSTEM_DIR_DOWNLOADS), "", false,
+			DisplayServer.FILE_DIALOG_MODE_OPEN_FILE, filters, func(ok: bool, paths: PackedStringArray, _f: int):
+				if ok and paths.size() > 0:
+					_import_external(paths[0]))
+	else:
+		var dlg := FileDialog.new()
+		dlg.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+		dlg.access = FileDialog.ACCESS_FILESYSTEM
+		dlg.filters = filters
+		dlg.title = "Importer un monde"
+		dlg.use_native_dialog = false
+		dlg.file_selected.connect(func(p: String):
+			_import_external(p)
+			dlg.queue_free())
+		dlg.canceled.connect(dlg.queue_free)
+		ui.add_child(dlg)
+		dlg.popup_centered_ratio(0.8)
+
+func _import_external(path: String) -> void:
+	var local := SaveSystem.copy_into_exports(path)
+	if local == "":
+		ui.show_message("Import impossible", ["Le fichier « %s » n'a pas pu être lu." % path.get_file()])
+		return
+	import_world(local)
+
+## Enregistre une copie de l'export là où le joueur le choisit (pour l'envoyer ou le sauvegarder ailleurs).
+func export_to_device(kind: String) -> void:
+	var path := SaveSystem.export_world(world, kind)
+	if path == "":
+		ui.show_message("Export", ["Échec de l'export."])
+		return
+	var save := func(dest: String):
+		var msg := "Copie enregistrée : %s" % dest if SaveSystem.copy_file(path, dest) else "Impossible d'écrire à cet endroit : %s" % dest
+		ui.show_message("Export", [msg])
+	if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_FILE):
+		DisplayServer.file_dialog_show("Enregistrer le monde", OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS), path.get_file(), false,
+			DisplayServer.FILE_DIALOG_MODE_SAVE_FILE, PackedStringArray(["*.cworld ; Monde Cit-a"]), func(ok: bool, paths: PackedStringArray, _f: int):
+				if ok and paths.size() > 0:
+					save.call(paths[0]))
+	else:
+		var dlg := FileDialog.new()
+		dlg.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+		dlg.access = FileDialog.ACCESS_FILESYSTEM
+		dlg.current_file = path.get_file()
+		dlg.use_native_dialog = false
+		dlg.file_selected.connect(func(p: String):
+			save.call(p)
+			dlg.queue_free())
+		dlg.canceled.connect(dlg.queue_free)
+		ui.add_child(dlg)
+		dlg.popup_centered_ratio(0.8)
+
 func import_world(path: String) -> void:
 	var r := SaveSystem.import_file(path)
 	if r.has("error"):
