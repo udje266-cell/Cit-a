@@ -103,3 +103,17 @@ construction initiale répartie sur plusieurs fils.
   du couple fondateur à 10 habitants.
 - Icône provisoire (`icon.svg`) inspirée de l'illustration fournie : l'image originale doit être ajoutée au dépôt
   (`icon.png`, 512×512 minimum) pour être utilisée comme icône Android.
+
+## APK Android compilé (version 0.4.0) — procédure réellement exécutée
+Environnement : Linux x86-64, Godot 4.4.1, JDK 21, Android SDK (cmdline-tools, build-tools 34.0.0, platform 34).
+1. Modèles d'export officiels 4.4.1 : seuls `android_debug.apk`, `android_release.apk`, `android_source.zip` et
+   `version.txt` copiés dans `~/.local/share/godot/export_templates/4.4.1.stable/`.
+2. Clé de débogage : `keytool -genkeypair -keystore debug.keystore -alias androiddebugkey -storepass android ...`.
+3. `~/.config/godot/editor_settings-4.4.tres` : `export/android/android_sdk_path`, `java_sdk_path`,
+   `debug_keystore` (+ utilisateur et mot de passe).
+4. `godot --headless --path . --export-debug "Android" build/cit-a-debug.apk`.
+
+Résultat : APK de 27,8 Mo, signé (vérifié par `apksigner verify`), paquet `org.cita.godsim` 0.4.0 (code 4),
+Android 5.0+ (SDK 21, cible 34), arm64-v8a. Contient `data/*.json` et `data/i18n/en.json`.
+**Version de débogage, non testée sur un appareil** : à installer en autorisant les sources inconnues.
+Une version de publication (Play Store) demande une clé de publication propre au commanditaire.
