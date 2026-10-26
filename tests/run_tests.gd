@@ -23,7 +23,7 @@ func _init() -> void:
 		"test_birth_split", "test_natural_never_both", "test_natural_distribution",
 		"test_no_divine_attribution", "test_rule_attribution", "test_parents_both_not_inherited",
 		"test_genetics_never_touch_affinity", "test_late_grant", "test_manual_orders", "test_budget_limit",
-		"test_reload_no_reroll", "test_affinity_origins", "test_growth_bounded", "test_powers", "test_delayed_effect",
+		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_growth_bounded", "test_powers", "test_delayed_effect",
 		"test_conversion", "test_weak_deity_return", "test_save_roundtrip", "test_save_files",
 		"test_migration_v0", "test_export_import", "test_offline", "test_benchmark",
 	]
@@ -302,6 +302,32 @@ func test_affinity_origins() -> void:
 		if ind.affinity == "both" and ind.origin == "natural":
 			ok = false
 	check(ok, "chaque individu doté d'une affinité a une origine cohérente")
+
+func test_sliced_tick() -> void:
+	var a = make_world(31)
+	var b = make_world(31)
+	a.run_years(40)
+	var steps := 0
+	var worst := 0
+	for y in 40:
+		var done := false
+		while not done:
+			var t0 := Time.get_ticks_usec()
+			done = b.tick_step(100)
+			worst = maxi(worst, Time.get_ticks_usec() - t0)
+			steps += 1
+	check(JSON.stringify(a.to_dict(), "", false, true) == JSON.stringify(b.to_dict(), "", false, true), "calcul étalé (%d tranches) identique au calcul d'un bloc" % steps)
+	print("    tranche la plus longue : %.2f ms" % (worst / 1000.0))
+
+func test_large_world() -> void:
+	var w = World.new(cat)
+	w.create_planet(77, 5)
+	check(w.planet.cell_count == 10242, "grand monde : 10 242 cellules")
+	w.create_player_people("ondin", "Grand", [{"name": "A", "traits": []}, {"name": "B", "traits": []}], {"name": "D"})
+	w.create_rivals(4)
+	check(w.peoples.size() == 5, "grand monde : 4 peuples rivaux")
+	w.run_years(60)
+	check(w.alive_settlements().size() >= 5, "grand monde : la simulation tourne (%d établissements)" % w.alive_settlements().size())
 
 func test_reload_no_reroll() -> void:
 	var w = make_world(77)

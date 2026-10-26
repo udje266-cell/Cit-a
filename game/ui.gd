@@ -1027,7 +1027,12 @@ func show_main_menu(worlds: Array, exports: Array) -> void:
 	seed_edit.placeholder_text = "Graine (vide = aléatoire)"
 	seed_edit.custom_minimum_size.x = 320
 	h.add_child(seed_edit)
-	h.add_child(_button("Nouveau monde", func(): main.new_world(seed_edit.text)))
+	var size_opt := OptionButton.new()
+	size_opt.add_item("Petit monde (2 562 régions, 2 rivaux)")
+	size_opt.add_item("Grand monde (10 242 régions, 4 rivaux)")
+	size_opt.custom_minimum_size.y = 52
+	h.add_child(size_opt)
+	h.add_child(_button("Nouveau monde", func(): main.new_world(seed_edit.text, 4 if size_opt.selected == 0 else 5)))
 	body.add_child(_rich("\n[b]Mondes sauvegardés[/b]"))
 	if worlds.is_empty():
 		body.add_child(_rich("Aucun."))

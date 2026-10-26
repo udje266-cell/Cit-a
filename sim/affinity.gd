@@ -77,77 +77,118 @@ static func natural_draw(rng: RandomNumberGenerator, cfg: Dictionary) -> String:
 static func resolve_births(world, s: Dictionary, n: int) -> Dictionary:
 	var cfg: Dictionary = world.cat.config.get("affinity", {})
 	var result := empty_counts()
+	if n <= 0:
+		return result
+	var match_cache := {}   # conditions d'une règle : évaluées une fois par établissement et par lot
+	# 1) Tirages naissance par naissance : emplacement (compteur mondial) puis dieu ou hasard.
+	var natural := {"none": 0, "magic": 0, "sword": 0}
+	var divine_by_deity := {}   # id du dieu (-1 : aucun croyant) -> nombre de naissances
 	for i in n:
 		var counter: int = world.birth_counter
 		world.birth_counter += 1
-		var a := NONE
 		if is_divine_slot(counter, cfg):
-			world.stats_births.divine_slots += 1
-			s.births.divine_slots += 1
-			_last_src = ""
-			a = _divine_birth(world, s, cfg)
-			_add_src(s, a, _last_src, 1.0)
-			if a == NONE:
-				world.stats_births.divine_none += 1
-				s.births.divine_none += 1
-			else:
-				world.stats_births.divine[a] += 1
-				s.births.divine[a] += 1
+			var deity = _deity_for_birth(world, s)
+			var did := -1 if deity == null else int(deity.id)
+			divine_by_deity[did] = int(divine_by_deity.get(did, 0)) + 1
 		else:
-			world.stats_births.natural_slots += 1
-			s.births.natural_slots += 1
-			a = natural_draw(world.rng, cfg)
-			world.stats_births.natural[a] += 1
-			s.births.natural[a] += 1
-			if a != NONE:
-				_record(world, null, s, "natural", a, "Naissance naturelle (hasard)")
-				_add_src(s, a, "natural", 1.0)
-		s.aff[a] = float(s.aff[a]) + 1.0
-		result[a] += 1.0
+			natural[natural_draw(world.rng, cfg)] += 1
+	# 2) Naissances naturelles, regroupées.
+	var nat_total: int = natural.none + natural.magic + natural.sword
+	world.stats_births.natural_slots += nat_total
+	s.births.natural_slots += nat_total
+	for a in natural:
+		var k: int = natural[a]
+		if k == 0:
+			continue
+		world.stats_births.natural[a] += k
+		s.births.natural[a] += k
+		s.aff[a] = float(s.aff[a]) + k
+		result[a] += k
+		if a != NONE:
+			_record(world, null, s, "natural", a, "Naissance naturelle (hasard)", k)
+			_add_src(s, a, "natural", k)
+	# 3) Naissances ouvertes au divin : décision du dieu, une par une seulement s'il a des règles ou des ordres.
+	for did in divine_by_deity:
+		var k: int = divine_by_deity[did]
+		world.stats_births.divine_slots += k
+		s.births.divine_slots += k
+		var deity = null if did < 0 else world.deities[did]
+		if deity == null or (deity.rules.is_empty() and deity.manual_orders.is_empty()):
+			world.stats_births.divine_none += k
+			s.births.divine_none += k
+			s.aff[NONE] = float(s.aff[NONE]) + k
+			result[NONE] += k
+			continue
+		var left := k
+		# Ordres manuels d'abord, puis règles par priorité : chacune prend des naissances jusqu'à
+		# épuisement de son plafond, du budget ou de l'énergie (équivalent au traitement une par une).
+		for o in deity.manual_orders:
+			if left == 0:
+				break
+			if int(o.settlement) != int(s.id) or int(o.remaining) <= 0:
+				continue
+			var c := cost_of(world, o.affinity, false)
+			var take := mini(left, mini(int(o.remaining), int(floor(float(deity.energy) / c + 0.000001))))
+			if take <= 0:
+				continue
+			deity.energy -= c * take
+			o.remaining = int(o.remaining) - take
+			deity.affinities_granted += take
+			_record(world, deity, s, "manual", o.affinity, "Ordre manuel du dieu", take)
+			_grant_births(world, s, o.affinity, "manual", take, result)
+			left -= take
+		_cleanup_orders(deity)
+		if left > 0:
+			for r in _sorted_rules(world, deity):
+				if left == 0:
+					break
+				if not r.enabled or int(r.used_this_year) >= int(r.max_per_year):
+					continue
+				var mkey := "%d_%d" % [int(deity.id), int(r.id)]
+				if not match_cache.has(mkey):
+					match_cache[mkey] = match_rule(world, deity, s, r)
+				var reason: String = match_cache[mkey]
+				if reason == "":
+					continue
+				var c2 := cost_of(world, r.result, false)
+				var by_budget := int(floor((float(deity.auto_budget) - float(deity.auto_spent)) / c2 + 0.000001))
+				var by_energy := int(floor(float(deity.energy) / c2 + 0.000001))
+				var take2 := mini(left, mini(int(r.max_per_year) - int(r.used_this_year), mini(by_budget, by_energy)))
+				if take2 <= 0:
+					r.blocked_budget = int(r.get("blocked_budget", 0)) + left
+					continue
+				deity.energy -= c2 * take2
+				deity.auto_spent += c2 * take2
+				r.used_this_year = int(r.used_this_year) + take2
+				r.total = int(r.total) + take2
+				deity.affinities_granted += take2
+				_record(world, deity, s, "rule:" + str(r.name), r.result, reason, take2)
+				_grant_births(world, s, r.result, "rule:" + str(r.name), take2, result)
+				left -= take2
+				if left > 0 and (by_budget == take2 or by_energy == take2):
+					r.blocked_budget = int(r.get("blocked_budget", 0)) + left
+		if left > 0:
+			world.stats_births.divine_none += left
+			s.births.divine_none += left
+			s.aff[NONE] = float(s.aff[NONE]) + left
+			result[NONE] += left
 	return result
 
-## Naissance ouverte à l'attribution : le dieu de la famille (tiré selon les parts religieuses) décide.
-## Pas de croyant → pas de dieu pour décider → 'none'.
-static func _divine_birth(world, s: Dictionary, cfg: Dictionary) -> String:
-	var deity = _deity_for_birth(world, s)
-	if deity == null:
-		return NONE
-	# 1) Ordres manuels du dieu (prioritaires).
-	for o in deity.manual_orders:
-		if int(o.settlement) == int(s.id) and int(o.remaining) > 0:
-			var c := cost_of(world, o.affinity, false)
-			if deity.energy >= c:
-				deity.energy -= c
-				o.remaining = int(o.remaining) - 1
-				deity.affinities_granted += 1
-				_record(world, deity, s, "manual", o.affinity, "Ordre manuel du dieu")
-				_cleanup_orders(deity)
-				_last_src = "manual"
-				return o.affinity
-	# 2) Règles automatiques par priorité croissante.
+static func _grant_births(world, s: Dictionary, a: String, src: String, k: int, result: Dictionary) -> void:
+	world.stats_births.divine[a] += k
+	s.births.divine[a] += k
+	s.aff[a] = float(s.aff[a]) + k
+	result[a] += k
+	_add_src(s, a, src, k)
+
+static func _sorted_rules(world, deity) -> Array:
+	var rkey := "rules%d" % int(deity.id)
+	if world.tick_cache.has(rkey):
+		return world.tick_cache[rkey]
 	var rules: Array = deity.rules.duplicate()
-	rules.sort_custom(func(a, b): return int(a.priority) < int(b.priority))
-	for r in rules:
-		if not r.enabled:
-			continue
-		if int(r.used_this_year) >= int(r.max_per_year):
-			continue
-		var reason := match_rule(world, deity, s, r)
-		if reason == "":
-			continue
-		var c2 := cost_of(world, r.result, false)
-		if deity.auto_spent + c2 > float(deity.auto_budget) or deity.energy < c2:
-			r.blocked_budget = int(r.get("blocked_budget", 0)) + 1
-			continue
-		deity.energy -= c2
-		deity.auto_spent += c2
-		r.used_this_year = int(r.used_this_year) + 1
-		r.total = int(r.total) + 1
-		deity.affinities_granted += 1
-		_record(world, deity, s, "rule:" + str(r.name), r.result, reason)
-		_last_src = "rule:" + str(r.name)
-		return r.result
-	return NONE
+	rules.sort_custom(func(x, y): return int(x.priority) < int(y.priority))
+	world.tick_cache[rkey] = rules
+	return rules
 
 static func _deity_for_birth(world, s: Dictionary):
 	var r: float = world.rng.randf()

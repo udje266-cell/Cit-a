@@ -9,7 +9,9 @@ func _run() -> void:
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	await process_frame
-	main.new_world("4242")
+	var sub := int(OS.get_cmdline_user_args()[0]) if OS.get_cmdline_user_args().size() > 0 else 4
+	main.new_world("4242", sub)
+	print("monde : niveau %d" % sub)
 	await process_frame
 	main.founder_screen._confirm()
 	for i in 220:
@@ -38,5 +40,7 @@ func _run() -> void:
 			prim = maxi(prim, int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
 			calls = maxi(calls, int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
 		print("distance %.1f : image %.1f ms (rendu logiciel llvmpipe) · %d primitives · %d appels de dessin" % [d, (Time.get_ticks_usec() - f0) / 60000.0, prim, calls])
+	await process_frame
+	root.get_viewport().get_texture().get_image().save_png("user://perf_%d.png" % sub)
 	print("sommets terrain : %d · mémoire statique %.1f Mo · vidéo %.1f Mo" % [main.view.vertex_count(), Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0, Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0])
 	quit()

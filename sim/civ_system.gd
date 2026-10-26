@@ -6,27 +6,18 @@ const Genetics = preload("res://sim/genetics.gd")
 const Affinity = preload("res://sim/affinity.gd")
 const Planet = preload("res://sim/planet.gd")
 
-static func tick(w) -> void:
-	var cfg: Dictionary = w.cat.config.civ
-	var fx_cache := {}
-	for p in w.peoples:
-		if not p.extinct:
-			fx_cache[int(p.id)] = tech_fx(w, p)
-	var list: Array = w.alive_settlements()
-	for s in list:
-		_settlement_year(w, s, cfg, fx_cache[int(s.people)])
-	for p in w.peoples.duplicate():   # copie : une sécession peut ajouter un peuple pendant la boucle
-		if not p.extinct:
-			_research(w, p, fx_cache.get(int(p.id), {}))
-			_politics(w, p)
-	_relations(w)
-	_check_extinction(w)
+## L'année est orchestrée par World.tick_step (phases étalées sur plusieurs images).
 
 # ------------------------------------------------------------------ Établissement
 
 static func stats_of(w, s: Dictionary) -> Dictionary:
+	var key := "st%d" % int(s.id)
+	if w.tick_cache.has(key):
+		return w.tick_cache[key]
 	var p: Dictionary = w.peoples[int(s.people)]
-	return Genetics.effective_stats(w.cat, p.species, s.freqs, p.culture, s.statuses)
+	var st := Genetics.effective_stats(w.cat, p.species, s.freqs, p.culture, s.statuses)
+	w.tick_cache[key] = st
+	return st
 
 static func cell_food(w, cell: int, species_id: String, st: Dictionary, fx: Dictionary) -> float:
 	var pl = w.planet
@@ -75,7 +66,13 @@ static func _settlement_year(w, s: Dictionary, cfg: Dictionary, fx: Dictionary) 
 	# Territoire (rayon selon la taille) tous les 5 ans ou si vide.
 	if w.year % 5 == int(s.id) % 5 or s.territory.is_empty():
 		_update_territory(w, s)
-	var k := capacity(w, s, st, fx)
+	# Capacité : recalculée tous les 5 ans, ou si le terrain, le territoire ou les techniques ont changé.
+	var stamp := "%d_%d_%d" % [w.planet.version, s.territory.size(), w.peoples[int(s.people)].techs.size()]
+	var k: float
+	if s.get("_kstamp", "") != stamp or w.year % 5 == int(s.id) % 5 or not s.has("_kbase"):
+		s["_kbase"] = capacity(w, s, st, fx) / (0.7 if s.statuses.has("maudit") else 1.0)
+		s["_kstamp"] = stamp
+	k = float(s._kbase) * (0.7 if s.statuses.has("maudit") else 1.0)
 	s.capacity = k
 	# Nourriture.
 	var need := pop * float(cfg.food_per_pop) * (1.15 - float(st.food) * 0.3)
@@ -140,6 +137,7 @@ static func _settlement_year(w, s: Dictionary, cfg: Dictionary, fx: Dictionary) 
 	if w.year - int(s.last_gen) >= gen_years:
 		s.last_gen = w.year
 		_generation(w, s, k, famine)
+		w.tick_cache.erase("st%d" % int(s.id))
 	if float(s.pop) < 1.0:
 		_abandon(w, s, "Population éteinte")
 		return
@@ -234,6 +232,7 @@ static func _try_expand(w, s: Dictionary, cfg: Dictionary, st: Dictionary, k: fl
 
 static func _abandon(w, s: Dictionary, why: String) -> void:
 	s.alive = false
+	w.invalidate_settlements()
 	s.pop = 0.0
 	for c in s.territory:
 		if w.owner[int(c)] == int(s.id):
@@ -243,6 +242,9 @@ static func _abandon(w, s: Dictionary, why: String) -> void:
 # ------------------------------------------------------------------ Techniques
 
 static func tech_fx(w, p: Dictionary) -> Dictionary:
+	var key := "fx%d" % int(p.id)
+	if w.tick_cache.has(key):
+		return w.tick_cache[key]
 	var fx := {}
 	for t in p.techs:
 		if not w.cat.techs.has(t):
@@ -250,6 +252,7 @@ static func tech_fx(w, p: Dictionary) -> Dictionary:
 		var tfx: Dictionary = w.cat.techs[t].fx
 		for k in tfx:
 			fx[k] = fx.get(k, 0.0) + float(tfx[k])
+	w.tick_cache[key] = fx
 	return fx
 
 ## Pourquoi une technique est-elle indisponible ? "" si disponible.
@@ -365,6 +368,7 @@ static func _choose_tech(w, p: Dictionary, avail: Array) -> String:
 	return best
 
 static func learn_tech(w, p: Dictionary, tid: String, why: String) -> void:
+	w.tick_cache.erase("fx%d" % int(p.id))
 	var t: Dictionary = w.cat.techs[tid]
 	p.techs[tid] = w.year
 	p.research.current = ""
@@ -392,6 +396,7 @@ static func _regress(w, p: Dictionary, why: String) -> void:
 	if latest == "":
 		return
 	p.techs.erase(latest)
+	w.tick_cache.erase("fx%d" % int(p.id))
 	p.era = era_of(w, p)
 	w.add_log("%s oublie : %s" % [p.name, w.cat.techs[latest].name], why, "tech", int(p.origin_cell))
 	p.history.append({"year": w.year, "text": "Régression : perte de « %s »." % w.cat.techs[latest].name})
@@ -449,6 +454,8 @@ static func _secede(w, p: Dictionary, list: Array, stab: float) -> void:
 	w.peoples.append(np)
 	for i in list.size() / 2:
 		list[i].people = nid
+		w.tick_cache.erase("st%d" % int(list[i].id))
+	w.invalidate_settlements()
 	w.add_log("Sécession : %s" % np.name, "Peuple trop étendu et instable (stabilité moyenne %.0f %%)" % (stab * 100.0), "politics", int(np.origin_cell))
 	p.history.append({"year": w.year, "text": "Sécession de %s." % np.name})
 

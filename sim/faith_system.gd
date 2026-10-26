@@ -47,15 +47,13 @@ static func main_religion(s: Dictionary) -> String:
 static func _conversions(w, alive: Array, cfg: Dictionary) -> void:
 	var rate := float(cfg.conversion_rate)
 	var deltas := []
-	for s in alive:
+	var near := _near_lists(w, alive)
+	for idx in alive.size():
+		var s: Dictionary = alive[idx]
 		var d := {}
 		var resist := 1.0 + float(w.peoples[int(s.people)].culture.get("fanatique", 0.0))
-		for o in alive:
-			if is_same(o, s):
-				continue
+		for o in near[idx]:
 			var dist: float = w.planet.pos[int(s.cell)].distance_to(w.planet.pos[int(o.cell)])
-			if dist > 0.35:
-				continue
 			var weight := (1.0 - dist / 0.35) * clampf(float(o.pop) / maxf(float(s.pop), 1.0), 0.2, 3.0)
 			for rid in o.faith:
 				var mine := float(s.faith.get(rid, 0.0))
@@ -73,6 +71,22 @@ static func _conversions(w, alive: Array, cfg: Dictionary) -> void:
 		if after != before and after != "":
 			var rel: Dictionary = w.religions[int(after)]
 			w.add_log("%s se convertit au %s" % [s.name, rel.name], "Influence d'établissements voisins plus fervents", "faith", int(s.cell))
+
+## Voisins religieux (distance < 0,35) de chaque établissement, recalculés quand la liste change.
+static func _near_lists(w, alive: Array) -> Array:
+	var sig := alive.size() * 100003 + (int(alive[alive.size() - 1].id) if alive.size() > 0 else 0)
+	if w.has_meta("near_lists") and w.get_meta("near_sig") == sig:
+		return w.get_meta("near_lists")
+	var out := []
+	for s in alive:
+		var lst := []
+		for o in alive:
+			if not is_same(o, s) and w.planet.pos[int(s.cell)].distance_to(w.planet.pos[int(o.cell)]) <= 0.35:
+				lst.append(o)
+		out.append(lst)
+	w.set_meta("near_lists", out)
+	w.set_meta("near_sig", sig)
+	return out
 
 static func _normalize(s: Dictionary) -> void:
 	var total := 0.0

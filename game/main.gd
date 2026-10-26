@@ -99,10 +99,11 @@ func _list_exports() -> Array:
 			out.append(SaveSystem.EXPORTS + "/" + f)
 	return out
 
-func new_world(seed_text: String) -> void:
+func new_world(seed_text: String, subdivisions: int = -1) -> void:
 	var s := int(seed_text) if seed_text.strip_edges().is_valid_int() else randi() % 1000000
 	world = World.new(cat)
-	world.create_planet(s)
+	world.create_planet(s, subdivisions)
+	world.set_meta("rivals", 2 if world.planet.cell_count <= 2562 else 4)
 	world.world_name = "Monde %d" % s
 	world_id = SaveSystem.new_world_id()
 	_start_founders()
@@ -126,7 +127,7 @@ func _on_founders(species_id: String, people_name: String, deity_name: String, f
 			d.energy = float(d.energy) - float(cat.config.affinity.cost[f.affinity])
 			d.affinities_granted = int(d.affinities_granted) + 1
 			world.add_log("%s reçoit le don : %s" % [f.name, f.affinity], "Attribution divine lors de la création des fondateurs", "deity", int(world.peoples[pid].origin_cell))
-	world.create_rivals(int(cat.cfg("rivals", "count", 2)))
+	world.create_rivals(int(world.get_meta("rivals", cat.cfg("rivals", "count", 2))))
 	world.world_name = people_name
 	SaveSystem.save_world(world, world_id)
 	_enter_play()
@@ -214,15 +215,17 @@ func _process(delta: float) -> void:
 		return
 	if state != "play":
 		return
-	if speed > 0:
+	# Simulation étalée : chaque année est calculée par morceaux de 2 ms par image (pas d'à-coup).
+	if world.tick_in_progress():
+		if world.tick_step(2000):
+			ui.mark_dirty()
+	elif speed > 0:
 		_acc += delta * speed
 		var spt := float(cat.cfg("time", "seconds_per_tick", 1.0))
-		var guard := 0
-		while _acc >= spt and guard < 4:
-			world.tick()
-			_acc -= spt
-			guard += 1
-			ui.mark_dirty()
+		if _acc >= spt:
+			_acc = minf(_acc - spt, spt * 4.0)
+			if world.tick_step(2000):
+				ui.mark_dirty()
 	_autosave_acc += delta
 	if _autosave_acc >= float(cat.cfg("time", "autosave_seconds", 60)):
 		_autosave_acc = 0.0
@@ -466,6 +469,7 @@ func _update_tutorial() -> void:
 
 func save_now() -> void:
 	if world != null and world_id != "" and state in ["play", "catchup"]:
+		world.finish_tick()   # jamais d'année à moitié calculée dans une sauvegarde
 		SaveSystem.save_world(world, world_id)
 
 func export_world(kind: String) -> String:

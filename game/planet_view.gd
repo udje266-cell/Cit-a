@@ -38,7 +38,7 @@ const RES_COLORS := {"mana": Color(0.7, 0.35, 0.95), "ore": Color(0.8, 0.35, 0.2
 	"wood": Color(0.15, 0.5, 0.2), "game": Color(0.85, 0.6, 0.3), "stone": Color(0.6, 0.6, 0.6)}
 
 # ---- Formes
-const DETAIL := 6               # subdivisions par arête d'un triangle de simulation
+var DETAIL := 6               # subdivisions par arête d'un triangle de simulation
 const FACET := 2               # la terre est dessinée sur un sommet sur FACET : grands plans anguleux
 const STEP := 0.06             # hauteur d'une terrasse (unités de simulation)
 const LAND_SCALE := 0.11
@@ -114,6 +114,8 @@ var _cam_dist := 3.0
 
 func setup(p_world) -> void:
 	world = p_world
+	# Même taille de facette quelle que soit la taille du monde : un monde 4× plus fin est moins subdivisé.
+	DETAIL = 6 if int(world.planet.subdivisions) <= 4 else 2
 	for c in get_children():
 		c.queue_free()
 	_village_nodes = {}
@@ -790,7 +792,9 @@ func _build_chunk_props(k: int) -> void:
 		for q0 in 3:
 			if pl.biome_name(pl.tris[t * 3 + q0]) in ["temperate_forest", "rainforest", "taiga"]:
 				forest_tri = true
-		for s in (40 if forest_tri else 14):
+		# Densité constante par unité de surface quelle que soit la taille du monde.
+		var area_k := pow(4.0, 4 - int(pl.subdivisions))
+		for s in int((40 if forest_tri else 14) * area_k + 0.5):
 			var r1 := rng.randf()
 			var r2 := rng.randf()
 			var yaw := rng.randf() * TAU

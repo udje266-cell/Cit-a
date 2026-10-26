@@ -35,6 +35,7 @@ var tutorial: Dictionary = {"step": 0, "done": []}
 var offline_consumed_until: int = 0  # horodatage Unix jusqu'auquel l'absence a déjà été simulée
 var last_saved_unix: int = 0
 var tick_ms_last: float = 0.0
+var tick_cache := {}                # calculs réutilisés pendant une année simulée (jamais sauvegardé)
 
 func _init(p_cat = null) -> void:
 	cat = p_cat if p_cat != null else Catalog.shared()
@@ -172,24 +173,84 @@ func _new_settlement(pid: int, cell: int, pop: float, freqs: Dictionary) -> Dict
 		"aff_src": Affinity.empty_sources(), "prev_pop": pop}
 	settlements.append(s)
 	owner[cell] = id
+	invalidate_settlements()
 	return s
 
 # ------------------------------------------------------------------ Tick
 
 func tick() -> void:
-	var t0 := Time.get_ticks_usec()
-	year += 1
-	for d in deities:
-		d.auto_spent = 0.0
-		for r in d.rules:
-			r.used_this_year = 0
-	Powers.process_pending(self)
-	Civ.tick(self)
-	Faith.tick(self)
+	while not tick_step(1 << 30):
+		pass
+
+var _phase := 0
+var _phase_list: Array = []
+var _phase_index := 0
+var _tick_t0 := 0
+
+func tick_in_progress() -> bool:
+	return _phase != 0
+
+## Termine immédiatement l'année en cours (avant une sauvegarde, par exemple).
+func finish_tick() -> void:
+	if _phase != 0:
+		while not tick_step(1 << 30):
+			pass
+
+## Avance l'année en cours par phases, dans un budget de temps (µs). Renvoie true quand l'année est finie.
+## Permet d'étaler le calcul sur plusieurs images (pas d'à-coup sur téléphone). Même résultat que tick().
+func tick_step(budget_usec: int) -> bool:
+	var start := Time.get_ticks_usec()
+	if _phase == 0:
+		_tick_t0 = start
+		tick_cache.clear()
+		year += 1
+		for d in deities:
+			d.auto_spent = 0.0
+			for r in d.rules:
+				r.used_this_year = 0
+		Powers.process_pending(self)
+		for p in peoples:
+			if not p.extinct:
+				Civ.tech_fx(self, p)
+		_phase_list = alive_settlements().duplicate()
+		_phase_index = 0
+		_phase = 1
+	if _phase == 1:
+		var cfg: Dictionary = cat.config.civ
+		while _phase_index < _phase_list.size():
+			var s: Dictionary = _phase_list[_phase_index]
+			_phase_index += 1
+			if s.alive:
+				Civ._settlement_year(self, s, cfg, Civ.tech_fx(self, peoples[int(s.people)]))
+			if Time.get_ticks_usec() - start > budget_usec:
+				return false
+		_phase = 2
+	if _phase == 2:
+		for p in peoples.duplicate():   # copie : une sécession peut ajouter un peuple pendant la boucle
+			if not p.extinct:
+				Civ._research(self, p, Civ.tech_fx(self, p))
+				Civ._politics(self, p)
+		_phase = 3
+		if Time.get_ticks_usec() - start > budget_usec:
+			return false
+	if _phase == 3:
+		Civ._relations(self)
+		Civ._check_extinction(self)
+		_phase = 4
+		if Time.get_ticks_usec() - start > budget_usec:
+			return false
+	if _phase == 4:
+		Faith.tick(self)
+		_phase = 5
+		if Time.get_ticks_usec() - start > budget_usec:
+			return false
 	RivalAI.tick(self)
 	if year % 5 == 0:
 		Faith.check_achievements(self)
-	tick_ms_last = (Time.get_ticks_usec() - t0) / 1000.0
+	tick_cache.clear()
+	_phase = 0
+	tick_ms_last = (Time.get_ticks_usec() - _tick_t0) / 1000.0
+	return true
 
 func run_years(n: int) -> void:
 	for i in n:
@@ -198,10 +259,28 @@ func run_years(n: int) -> void:
 # ------------------------------------------------------------------ Requêtes
 
 func alive_settlements() -> Array:
-	return settlements.filter(func(s): return s.alive)
+	if tick_cache.has("alive"):
+		return tick_cache.alive
+	var out := settlements.filter(func(s): return s.alive)
+	tick_cache["alive"] = out
+	return out
 
 func people_settlements(pid: int) -> Array:
-	return settlements.filter(func(s): return s.alive and int(s.people) == pid)
+	if not tick_cache.has("bypeople"):
+		var by := {}
+		for s in settlements:
+			if s.alive:
+				var k := int(s.people)
+				if not by.has(k):
+					by[k] = []
+				by[k].append(s)
+		tick_cache["bypeople"] = by
+	return tick_cache.bypeople.get(pid, [])
+
+## À appeler quand la liste des établissements ou leur peuple change.
+func invalidate_settlements() -> void:
+	tick_cache.erase("alive")
+	tick_cache.erase("bypeople")
 
 func people_pop(pid: int) -> float:
 	var t := 0.0
