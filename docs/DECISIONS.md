@@ -90,3 +90,16 @@ Mesuré sur 3 graines (5, 42, 777), 1000 ans, 5 peuples au départ, sans interve
 Restent à traiter : tous les dieux atteignent le niveau maximal (5) vers l'an 400–500, la progression manque donc de
 paliers en fin de partie ; sans intervention, le peuple du joueur peut disparaître (conquis ou réuni), mais ses
 fidèles et son dieu continuent. Coût : ≈ 40 ms par an simulé avec ~15 peuples (absorbé par le découpage en tranches).
+
+## D43 — Années climatiques, 8 pouvoirs, paliers de fin de partie, effets visuels
+- **Années climatiques** (`sim/climate.gd`) : 7 %/an de chance qu'un épisode de 2–5 ans commence. Sécheresse (régions
+  chaudes et sèches, récoltes ×0,7), hivers rudes (régions froides, ×0,7), années fastes (partout, ×1,2). Affiché dans
+  la barre du haut et le journal. Des saisons à l'intérieur de l'année n'auraient pas de sens avec un pas d'un an.
+- **Nouveaux pouvoirs** : Aurore sacrée, Saison douce (protège des mauvaises années), Source sacrée, Grande migration,
+  Éruption, Hybridation (nouveau trait héréditaire tiré selon la rareté, **jamais une affinité**), Grand froid,
+  Âge d'or. Soit 26 pouvoirs.
+- **Fin de partie** : 6 objectifs tardifs (+560 XP) et 2 niveaux de plus (paliers 650 et 900), avec les pouvoirs des
+  niveaux 5 à 7. Corrige le plafond atteint vers l'an 400.
+- **Effets visuels** (`game/power_fx.gd`) : un jeu de particules CPU par type d'effet (pluie, aurore, éruption, gel,
+  hélice ADN, source…), sprites doux, lumière ponctuelle et tremblement de caméra pour séisme et éruption ; chaque
+  effet se détruit seul. Planche : `docs/captures/effets_pouvoirs.png` (`tests/fx_shots.gd`).

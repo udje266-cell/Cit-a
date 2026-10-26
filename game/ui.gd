@@ -10,6 +10,7 @@ const Faith = preload("res://sim/faith_system.gd")
 const Powers = preload("res://sim/powers.gd")
 const Diplomacy = preload("res://sim/diplomacy.gd")
 const History = preload("res://sim/history.gd")
+const Climate = preload("res://sim/climate.gd")
 const Chart = preload("res://game/chart.gd")
 const Planet = preload("res://sim/planet.gd")
 const PlanetView = preload("res://game/planet_view.gd")
@@ -578,6 +579,8 @@ func refresh_hud(speed: int, catching_up: String = "") -> void:
 		return
 	var d: Dictionary = world.deities[world.player_deity]
 	chips.year.text = "An %d" % world.year
+	if world.climate.kind != "":
+		chips.year.text += " · " + str(Climate.KINDS[world.climate.kind].name)
 	chips.energy.text = "%.0f / %.0f" % [float(d.energy), float(d.max_energy)]
 	chips.faith.text = "+%.2f/an" % float(d.faith_rate)
 	chips.believers.text = "%d" % int(d.believers)
@@ -605,7 +608,7 @@ func show_explain(topic: String) -> void:
 	var d: Dictionary = world.deities[world.player_deity]
 	match topic:
 		"year":
-			show_message("Le temps", ["Un tour de simulation = 1 an. Utilisez la pause et les vitesses en haut à droite.", "Pendant votre absence, le monde avance (8 h maximum)."])
+			show_message("Le temps", ["Un tour de simulation = 1 an. Utilisez la pause et les vitesses en haut à droite.", "Pendant votre absence, le monde avance (8 h maximum).", "Climat : %s. Des épisodes de quelques années surviennent : sécheresses (régions chaudes et sèches, récoltes −30 %%), hivers rudes (régions froides, −30 %%), années fastes (partout, +20 %%). Le pouvoir « Saison douce » protège une région." % Climate.label(world)])
 		"energy":
 			show_message("Énergie divine", ["Réserve dépensée par les pouvoirs et les dons d'affinité : %.1f sur %.0f." % [float(d.energy), float(d.max_energy)],
 				"Elle se remplit chaque année grâce à la foi produite par vos fidèles. Le maximum augmente avec votre niveau.",

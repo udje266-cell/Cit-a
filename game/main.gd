@@ -334,6 +334,7 @@ func confirm_power() -> void:
 		_tutorial_done(2)
 		view.refresh(true)
 		view.pulse(cells, Color(1.0, 0.85, 0.35, 0.5))
+		view.play_fx(str(cat.powers[pid].get("visual", "sparkles")), cells)
 		ui.mark_dirty()
 		ui.refresh_hud(speed)
 		ui.show_toast("%s — énergie %.1f → %.1f (−%.1f)\n%s" % [r.msg, e0, float(d.energy), e0 - float(d.energy), _effect_diff(before, _effect_snapshot(cells), pid)])

@@ -2,6 +2,7 @@ extends RefCounted
 ## Civilisations autonomes : nourriture, croissance bornée par le milieu, naissances (via affinity.gd),
 ## territoires, expansion, génétique par génération, recherche, crises, relations et guerres, scissions.
 
+const Climate = preload("res://sim/climate.gd")
 const Genetics = preload("res://sim/genetics.gd")
 const Affinity = preload("res://sim/affinity.gd")
 const Planet = preload("res://sim/planet.gd")
@@ -80,7 +81,7 @@ static func _settlement_year(w, s: Dictionary, cfg: Dictionary, fx: Dictionary) 
 	s.capacity = k
 	# Nourriture.
 	var need := pop * float(cfg.food_per_pop) * (1.15 - float(st.food) * 0.3)
-	var prod := minf(pop, k) * float(cfg.food_per_pop) * 1.1
+	var prod := minf(pop, k) * float(cfg.food_per_pop) * 1.1 * Climate.food_factor(w, s)
 	var store_cap := pop * 1.5 * (1.0 + float(fx.get("storage", 0.0)))
 	var stock := float(s.food) + prod - need
 	var famine := false

@@ -13,6 +13,7 @@ const SaveSystem = preload("res://sim/save_system.gd")
 const Civ = preload("res://sim/civ_system.gd")
 const Diplomacy = preload("res://sim/diplomacy.gd")
 const History = preload("res://sim/history.gd")
+const Climate = preload("res://sim/climate.gd")
 
 var passed := 0
 var failed := 0
@@ -26,7 +27,7 @@ func _init() -> void:
 		"test_birth_split", "test_natural_never_both", "test_natural_distribution",
 		"test_no_divine_attribution", "test_rule_attribution", "test_parents_both_not_inherited",
 		"test_genetics_never_touch_affinity", "test_late_grant", "test_manual_orders", "test_budget_limit",
-		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_history", "test_growth_bounded", "test_powers", "test_delayed_effect",
+		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_history", "test_new_powers", "test_climate", "test_growth_bounded", "test_powers", "test_delayed_effect",
 		"test_conversion", "test_weak_deity_return", "test_save_roundtrip", "test_save_files",
 		"test_migration_v0", "test_export_import", "test_offline", "test_benchmark",
 	]
@@ -466,6 +467,54 @@ func test_powers() -> void:
 	check(not Powers.apply(w, did, "signe", int(s.cell)).ok, "énergie insuffisante refusée")
 	d.energy = 10.0
 	check(Powers.preview(w, did, "pluie", int(s.cell)).cells.size() > 1, "la prévisualisation renvoie la zone")
+
+func test_new_powers() -> void:
+	var w = make_world(8)
+	var did: int = w.player_deity
+	var d: Dictionary = w.deities[did]
+	var s := player_settlement(w)
+	d.level = 8
+	var ok := true
+	for pid in ["aurore", "saison_douce", "source_sacree", "migration_animale", "eruption", "hybridation", "ere_glaciaire", "age_or"]:
+		d.energy = 100.0
+		var r := Powers.apply(w, did, pid, int(s.cell))
+		if not r.ok:
+			ok = false
+			print("    refus : ", pid, " ", r.msg)
+	check(ok, "les 8 nouveaux pouvoirs s'appliquent")
+	check(s.statuses.has("saison_douce") and s.statuses.has("beni"), "Saison douce et Âge d'or posent leurs statuts")
+	# Hybridation : un trait héréditaire apparaît, jamais une affinité.
+	var aff_before: Dictionary = s.aff.duplicate()
+	var n0: int = s.freqs.size()
+	d.energy = 100.0
+	Powers.apply(w, did, "hybridation", int(s.cell))
+	var heritable := true
+	for t in s.freqs:
+		if cat.traits[t].kind != "heritable":
+			heritable = false
+	check(s.freqs.size() > n0 and heritable, "Hybridation ajoute un trait héréditaire")
+	check(JSON.stringify(s.aff) == JSON.stringify(aff_before), "Hybridation ne touche pas aux affinités")
+	check(cat.level_xp.size() == 9, "9 paliers de niveau")
+
+func test_climate() -> void:
+	var w = make_world(8)
+	var s := player_settlement(w)
+	w.climate = {"kind": "annee_faste", "until": w.year + 3}
+	check(is_equal_approx(Climate.food_factor(w, s), 1.2), "année faste : récoltes ×1,2")
+	w.climate = {"kind": "hiver_rude", "until": w.year + 3}
+	var cold: bool = w.planet.temperature[int(s.cell)] < 0.45
+	check(is_equal_approx(Climate.food_factor(w, s), 0.7 if cold else 1.0), "hiver rude : seules les régions froides souffrent")
+	s.statuses["saison_douce"] = 5
+	check(is_equal_approx(Climate.food_factor(w, s), 1.0), "Saison douce protège des mauvaises années")
+	var w2 = make_world(8)
+	var seen := {}
+	for y in 300:
+		w2.tick()
+		if w2.climate.kind != "":
+			seen[w2.climate.kind] = true
+	check(seen.size() == 3, "les trois épisodes climatiques surviennent en 300 ans (%s)" % str(seen.keys()))
+	var w3 = SaveSystem.world_from_dict(JSON.parse_string(JSON.stringify(w2.to_dict(), "", false, true)))
+	check(JSON.stringify(w3.climate) == JSON.stringify(w2.climate), "épisode climatique conservé à la sauvegarde")
 
 func test_delayed_effect() -> void:
 	var w = make_world()

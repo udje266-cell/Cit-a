@@ -16,6 +16,7 @@ const Planet = preload("res://sim/planet.gd")
 const Faith = preload("res://sim/faith_system.gd")
 const Genetics = preload("res://sim/genetics.gd")
 const WorldArt = preload("res://game/world_art.gd")
+const PowerFx = preload("res://game/power_fx.gd")
 
 const OVERLAYS := {"terrain": "Terrain", "peoples": "Peuples", "borders": "Frontières", "religion": "Religions",
 	"resources": "Ressources", "climate": "Climat", "fertility": "Fertilité", "conflicts": "Conflits",
@@ -108,6 +109,7 @@ var _border_node: MeshInstance3D
 var _border_sig := ""
 var _pulse_left := 0.0
 var _cam_dir := Vector3.FORWARD
+var fx: Node3D
 var _cam_dist := 3.0
 
 # ------------------------------------------------------------------ Mise en place
@@ -118,6 +120,8 @@ func setup(p_world) -> void:
 	DETAIL = 6 if int(world.planet.subdivisions) <= 4 else 2
 	for c in get_children():
 		c.queue_free()
+	fx = PowerFx.new()
+	add_child(fx)
 	_village_nodes = {}
 	_make_materials()
 	var sd: int = world.planet.seed_value
@@ -1346,6 +1350,20 @@ func _update_borders() -> void:
 	_border_node.mesh = m
 
 ## Retour visuel bref sur la zone touchée par un pouvoir.
+## Effet visuel d'un pouvoir sur la zone touchée (centre de la zone, à la surface).
+func play_fx(visual: String, cells: Array) -> void:
+	if cells.is_empty() or fx == null:
+		return
+	var c := Vector3.ZERO
+	for i in cells:
+		c += world.planet.pos[int(i)]
+	var dir := c.normalized()
+	var hint := int(cells[0])
+	var r := maxf(surface_radius(dir, hint), 1.0)
+	# Taille d'une cellule ≈ √(4π / nombre de cellules) ; la zone couvre √(nombre de cellules touchées) cellules.
+	var cell_size := sqrt(4.0 * PI / float(world.planet.cell_count))
+	fx.play(visual, dir * r, dir, cell_size * maxf(sqrt(float(cells.size())), 1.0) * 0.6)
+
 func pulse(cells: Array, color: Color) -> void:
 	highlight(cells, color)
 	_pulse_left = 1.6

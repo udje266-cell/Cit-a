@@ -119,6 +119,7 @@
     "protege":{"name":"Protégé","fx":{"disease":0.4,"end":0.2},"desc":"Protection divine contre les fléaux."},
     "inspire":{"name":"Inspiré","fx":{"int":0.2,"cur":0.1},"desc":"Révélation divine récente."},
     "maudit":{"name":"Maudit","fx":{"fert":-0.2,"food":-0.15,"coop":-0.1},"desc":"Malédiction divine."},
-    "traumatise":{"name":"Traumatisé","fx":{"coop":-0.15,"spi":0.1},"desc":"Catastrophe récente."}
+    "traumatise":{"name":"Traumatisé","fx":{"coop":-0.15,"spi":0.1},"desc":"Catastrophe récente."},
+    "saison_douce":{"name":"Saison douce","fx":{"food":0.15,"fert":0.05},"desc":"Climat apaisé par un dieu : protège des mauvaises années."}
   }
 }

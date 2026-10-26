@@ -11,6 +11,7 @@ const Powers = preload("res://sim/powers.gd")
 const RivalAI = preload("res://sim/rival_ai.gd")
 const Diplomacy = preload("res://sim/diplomacy.gd")
 const History = preload("res://sim/history.gd")
+const Climate = preload("res://sim/climate.gd")
 
 const SAVE_VERSION := 1
 const LOG_MAX := 400
@@ -29,6 +30,7 @@ var relations: Dictionary = {}       # "a:b" (a<b) -> {value, war, since, allian
 var pending: Array = []              # effets différés
 var chronicle: Array = []
 var series: Dictionary = History.empty()
+var climate: Dictionary = Climate.none()
 var owner: Array = []                # cellule -> id d'établissement ou -1 (Array : modifié en place depuis les systèmes)
 var birth_counter: int = 0
 var stats_births: Dictionary = {}
@@ -212,6 +214,7 @@ func tick_step(budget_usec: int) -> bool:
 			for r in d.rules:
 				r.used_this_year = 0
 		Powers.process_pending(self)
+		Climate.tick(self)
 		for p in peoples:
 			if not p.extinct:
 				Civ.tech_fx(self, p)
@@ -358,7 +361,7 @@ func to_dict() -> Dictionary:
 		"planet": planet.to_dict(), "peoples": peoples, "settlements": settlements, "religions": religions,
 		"deities": deities, "relations": relations, "pending": pending, "log": chronicle,
 		"birth_counter": birth_counter, "stats_births": stats_births, "affinity_history": affinity_history,
-		"player_deity": player_deity, "tutorial": tutorial, "series": series,
+		"player_deity": player_deity, "tutorial": tutorial, "series": series, "climate": climate,
 		"offline_consumed_until": offline_consumed_until, "last_saved_unix": last_saved_unix}
 
 func from_dict(d: Dictionary) -> void:
@@ -380,6 +383,10 @@ func from_dict(d: Dictionary) -> void:
 	player_deity = int(d.player_deity)
 	tutorial = d.get("tutorial", {"step": 0, "done": []})
 	series = d.get("series", History.empty())
+	climate = d.get("climate", Climate.none())
+	for k in ["until", "since"]:
+		if climate.has(k):
+			climate[k] = int(climate[k])
 	offline_consumed_until = int(d.get("offline_consumed_until", 0))
 	last_saved_unix = int(d.get("last_saved_unix", 0))
 	rng.seed = int(d.rng_seed)

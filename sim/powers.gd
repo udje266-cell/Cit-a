@@ -1,6 +1,7 @@
 extends RefCounted
 ## Pouvoirs divins : disponibilité, prévisualisation (zone + coût), application réelle, effets différés.
 
+const Genetics = preload("res://sim/genetics.gd")
 const Affinity = preload("res://sim/affinity.gd")
 const Civ = preload("res://sim/civ_system.gd")
 const Faith = preload("res://sim/faith_system.gd")
@@ -159,6 +160,17 @@ static func apply_effect(w, did: int, e: Dictionary, cells: Array, opts: Diction
 		"evolve":
 			for s in setl:
 				Civ.force_generation(w, s, 1.0 + float(e.v) * 20.0)
+		"mutate":
+			var n := 0
+			for s in setl:
+				var t := Genetics.pick_mutation(w.cat, s.freqs, w.rng)
+				if t != "":
+					s.freqs[t] = float(e.v)
+					Genetics.enforce_incompat(w.cat, s.freqs)
+					s.last_help = w.year
+					w.add_log("« %s » apparaît à %s" % [w.cat.traits[t].name, s.name], "Hybridation divine (%.0f %% de la population)" % (float(e.v) * 100.0), "evolution", int(s.cell))
+					n += 1
+			return n
 	return 0
 
 ## Après un changement de relief : recalcul du climat, établissements submergés.

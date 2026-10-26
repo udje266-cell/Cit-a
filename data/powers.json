@@ -1,5 +1,5 @@
 {
- "_doc": "Effets : height, moisture, temperature, fertility, resource, fervor, conversion, status, cleanse, pop, research, grant_affinity, memory. 'radius' = nombre de sauts de cellules. 'delayed' : effets appliqués 'after' années plus tard. 'unlock.level' : niveau divin requis.",
+ "_doc": "Effets : height, moisture, temperature, fertility, resource, fervor, conversion, status, cleanse, pop, research, grant_affinity, memory, mutate. 'radius' = nombre de sauts de cellules. 'delayed' : effets appliqués 'after' années plus tard. 'unlock.level' : niveau divin requis.",
  "level_xp": [
   0,
   20,
@@ -7,7 +7,9 @@
   110,
   190,
   300,
-  450
+  450,
+  650,
+  900
  ],
  "achievements": [
   {
@@ -128,6 +130,66 @@
    "cond": {
     "type": "foreign_believers",
     "value": 50
+   }
+  },
+  {
+   "id": "vingt_villages",
+   "name": "Terre promise",
+   "desc": "20 établissements vous vénèrent.",
+   "xp": 80,
+   "cond": {
+    "type": "settlements",
+    "value": 20
+   }
+  },
+  {
+   "id": "dix_mille_fideles",
+   "name": "Foi des multitudes",
+   "desc": "10 000 fidèles.",
+   "xp": 100,
+   "cond": {
+    "type": "believers",
+    "value": 10000
+   }
+  },
+  {
+   "id": "cent_miracles",
+   "name": "Faiseur de prodiges",
+   "desc": "100 pouvoirs utilisés.",
+   "xp": 80,
+   "cond": {
+    "type": "powers_used",
+    "value": 100
+   }
+  },
+  {
+   "id": "mille_dons",
+   "name": "Dispensateur",
+   "desc": "1 000 affinités conférées.",
+   "xp": 80,
+   "cond": {
+    "type": "affinities_granted",
+    "value": 1000
+   }
+  },
+  {
+   "id": "age_savoirs",
+   "name": "Âge des savoirs",
+   "desc": "Un peuple fidèle atteint l'époque 4.",
+   "xp": 120,
+   "cond": {
+    "type": "era",
+    "value": 4
+   }
+  },
+  {
+   "id": "grand_convertisseur",
+   "name": "Foi sans frontières",
+   "desc": "2 000 fidèles parmi d'autres peuples.",
+   "xp": 100,
+   "cond": {
+    "type": "foreign_believers",
+    "value": 2000
    }
   }
  ],
@@ -643,6 +705,241 @@
    "visual": "dna",
    "desc": "Accélère fortement la sélection naturelle : l'équivalent de 4 générations de sélection par le milieu.",
    "interactions": "N'agit que sur les traits héréditaires ; ne crée jamais d'affinité."
+  },
+  {
+   "id": "aurore",
+   "name": "Aurore sacrée",
+   "family": "sign",
+   "cost": 7,
+   "unlock": {
+    "level": 1
+   },
+   "radius": 3,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "fervor",
+     "v": 0.08
+    },
+    {
+     "t": "memory",
+     "v": 0.2
+    }
+   ],
+   "delayed": [],
+   "visual": "aurora",
+   "desc": "Des voiles de lumière dansent dans le ciel de la région.",
+   "interactions": "Ferveur des fidèles ; les autres peuples se souviendront de vous (retour facilité plus tard)."
+  },
+  {
+   "id": "saison_douce",
+   "name": "Saison douce",
+   "family": "climate",
+   "cost": 9,
+   "unlock": {
+    "level": 2
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "status",
+     "v": "saison_douce",
+     "years": 8
+    }
+   ],
+   "delayed": [],
+   "visual": "sun",
+   "desc": "Apaise le climat local pendant 8 ans : récoltes meilleures, aucune perte due aux sécheresses ou aux hivers rudes.",
+   "interactions": "Contre les années climatiques défavorables."
+  },
+  {
+   "id": "source_sacree",
+   "name": "Source sacrée",
+   "family": "vegetation",
+   "cost": 12,
+   "unlock": {
+    "level": 2
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "moisture",
+     "v": 0.25
+    },
+    {
+     "t": "fervor",
+     "v": 0.05
+    }
+   ],
+   "delayed": [
+    {
+     "after": 1,
+     "t": "fertility",
+     "v": 0.1
+    }
+   ],
+   "visual": "spring",
+   "desc": "Fait jaillir une source : la terre s'humidifie, puis devient plus fertile.",
+   "interactions": "Peut verdir un désert ; lieu de pèlerinage pour vos fidèles."
+  },
+  {
+   "id": "migration_animale",
+   "name": "Grande migration",
+   "family": "life",
+   "cost": 14,
+   "unlock": {
+    "level": 3
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "resource",
+     "v": "game"
+    }
+   ],
+   "delayed": [
+    {
+     "after": 3,
+     "t": "fertility",
+     "v": 0.05
+    }
+   ],
+   "visual": "flock",
+   "desc": "Des troupeaux s'installent dans la région, puis enrichissent les sols.",
+   "interactions": "Nourriture accrue ; favorise les chasseurs."
+  },
+  {
+   "id": "eruption",
+   "name": "Éruption",
+   "family": "catastrophe",
+   "cost": 30,
+   "unlock": {
+    "level": 5
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "height",
+     "v": 0.15,
+     "noise": true
+    },
+    {
+     "t": "pop",
+     "v": -0.2
+    },
+    {
+     "t": "status",
+     "v": "traumatise",
+     "years": 8
+    }
+   ],
+   "delayed": [
+    {
+     "after": 6,
+     "t": "fertility",
+     "v": 0.15
+    },
+    {
+     "after": 6,
+     "t": "resource",
+     "v": "ore"
+    }
+   ],
+   "visual": "eruption",
+   "desc": "Un volcan s'éveille : destruction, puis des cendres très fertiles et du minerai.",
+   "interactions": "Peut faire régresser un peuple ; la région devient ensuite très productive."
+  },
+  {
+   "id": "hybridation",
+   "name": "Hybridation",
+   "family": "evolution",
+   "cost": 22,
+   "unlock": {
+    "level": 5
+   },
+   "radius": 0,
+   "target": "settlement",
+   "effects": [
+    {
+     "t": "mutate",
+     "v": 0.1
+    }
+   ],
+   "delayed": [],
+   "visual": "dna",
+   "desc": "Fait apparaître un trait héréditaire nouveau (10 % de la population).",
+   "interactions": "Le trait est tiré parmi les traits héréditaires absents, selon leur rareté ; jamais une affinité Magie/Épée."
+  },
+  {
+   "id": "ere_glaciaire",
+   "name": "Grand froid",
+   "family": "catastrophe",
+   "cost": 40,
+   "unlock": {
+    "level": 6
+   },
+   "radius": 3,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "temperature",
+     "v": -0.25
+    },
+    {
+     "t": "pop",
+     "v": -0.05
+    },
+    {
+     "t": "status",
+     "v": "traumatise",
+     "years": 5
+    }
+   ],
+   "delayed": [
+    {
+     "after": 20,
+     "t": "temperature",
+     "v": 0.2
+    }
+   ],
+   "visual": "frost",
+   "desc": "Un froid durable s'abat sur une vaste région ; il s'atténue au bout de 20 ans.",
+   "interactions": "Favorise les traits de résistance au froid ; les peuples du froid y prospèrent."
+  },
+  {
+   "id": "age_or",
+   "name": "Âge d'or",
+   "family": "blessing",
+   "cost": 45,
+   "unlock": {
+    "level": 7
+   },
+   "radius": 0,
+   "target": "settlement",
+   "effects": [
+    {
+     "t": "status",
+     "v": "beni",
+     "years": 30
+    },
+    {
+     "t": "status",
+     "v": "inspire",
+     "years": 10
+    },
+    {
+     "t": "fervor",
+     "v": 0.2
+    }
+   ],
+   "delayed": [],
+   "visual": "blessing",
+   "desc": "Trente années de prospérité et dix d'inspiration pour un établissement.",
+   "interactions": "Le pouvoir le plus coûteux ; rend envieux les voisins (conversions)."
   }
  ]
 }

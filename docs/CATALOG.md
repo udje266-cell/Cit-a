@@ -203,6 +203,7 @@ Les affinités Magie/Épée **ne sont pas des traits** (voir RULES.md §1).
 | Inspiré | int +0.20, cur +0.10 | Révélation divine récente. |
 | Maudit | fert -0.20, food -0.15, coop -0.10 | Malédiction divine. |
 | Traumatisé | coop -0.15, spi +0.10 | Catastrophe récente. |
+| Saison douce | food +0.15, fert +0.05 | Climat apaisé par un dieu : protège des mauvaises années. |
 
 ## Statistiques (abréviations)
 
