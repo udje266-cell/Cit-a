@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "blender-cli": {
+      "source": "thanhdongnguyen/Blender-Skill",
+      "sourceType": "github",
+      "skillPath": "blender-cli/SKILL.md",
+      "computedHash": "0dfd6c4c0553936146c67096d0221c31592bbe514e18198dbf76a091e6600a44"
+    },
     "camera-systems": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "sourceType": "github",
