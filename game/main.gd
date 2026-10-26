@@ -479,7 +479,7 @@ func _update_tutorial() -> void:
 		return
 	var st := tutorial_step()
 	var pause_note := "\n(Le temps est en pause pendant l'apprentissage.)" if speed == 0 else ""
-	ui.set_tutorial("Tutoriel %d/%d — %s%s" % [st + 1, TUTORIAL.size(), TUTORIAL[st], pause_note])
+	ui.set_tutorial("Tutoriel %d/%d — %s%s" % [st + 1, TUTORIAL.size(), TUTORIAL[st], pause_note], st)
 
 # ------------------------------------------------------------------ Sauvegarde
 

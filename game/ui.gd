@@ -42,6 +42,9 @@ var confirm_label: RichTextLabel
 var confirm_ok: Button
 var brush_toggle: CheckButton
 var tutorial_panel: PanelContainer
+var tut_ring: Panel
+var _tut_step := -1
+var _tut_t := 0.0
 var tutorial_label: Label
 var log_panel: PanelContainer
 var log_text: RichTextLabel
@@ -283,9 +286,61 @@ func _build_tutorial() -> void:
 	tutorial_skip.custom_minimum_size.y = 44
 	h.add_child(tutorial_skip)
 
-func set_tutorial(text: String) -> void:
+func set_tutorial(text: String, step: int = -1) -> void:
 	tutorial_label.text = text
 	tutorial_panel.visible = text != "" and top_bar.visible and not log_panel.visible
+	_tut_step = step if text != "" else -1
+
+## Élément d'interface visé par l'étape du tutoriel (null : l'étape se joue sur la planète).
+func tutorial_target(step: int) -> Control:
+	if modal != null:
+		return null
+	match step:
+		2:
+			if not drawer.visible:
+				return rail_buttons.powers
+			for b in power_bar.get_children():
+				if b.has_meta("power") and str(b.get_meta("power")) == "signe":
+					return b
+			for b in family_bar.get_children():
+				if b.has_meta("family") and str(b.get_meta("family")) == "sign":
+					if not b.get_global_rect().intersects(family_scroll.get_global_rect().grow(-4)):
+						family_scroll.ensure_control_visible(b)
+					return b
+		3:
+			return rail_buttons.affinity
+		4:
+			return rail_buttons.journal
+	return null
+
+## Cadre lumineux pulsant autour de l'élément visé.
+func _process(delta: float) -> void:
+	if tut_ring == null:
+		tut_ring = Panel.new()
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0, 0, 0, 0)
+		sb.border_color = ACCENT
+		sb.set_border_width_all(4)
+		sb.set_corner_radius_all(14)
+		tut_ring.add_theme_stylebox_override("panel", sb)
+		tut_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tut_ring.top_level = true
+		tut_ring.z_index = 100
+		add_child(tut_ring)
+	var target: Control = tutorial_target(_tut_step) if _tut_step >= 0 and tutorial_panel.visible else null
+	if target == null or not target.is_visible_in_tree():
+		tut_ring.visible = false
+		return
+	_tut_t += delta
+	var grow := 6.0 + 4.0 * sin(_tut_t * 5.0)
+	var r := target.get_global_rect().grow(grow)
+	tut_ring.visible = true
+	tut_ring.position = r.position
+	tut_ring.size = r.size
+	tut_ring.modulate.a = 0.65 + 0.35 * sin(_tut_t * 5.0)
+
+func tutorial_highlighted() -> Control:
+	return tutorial_target(_tut_step) if tut_ring != null and tut_ring.visible else null
 
 ## Bandeau de retour (résultat d'un pouvoir, explication), masqué après quelques secondes.
 func show_toast(text: String, col: Color = Color(0.75, 0.95, 0.8)) -> void:

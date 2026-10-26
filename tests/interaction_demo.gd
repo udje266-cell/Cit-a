@@ -150,6 +150,18 @@ func _run() -> void:
 	for key in [s.name, w.peoples[0].name, "Population", "Divinité", "Religion dominante", "Ressources", "Besoins", "Développement", "Activité", "Problèmes"]:
 		check(info.find(str(key)) >= 0, "la fiche contient « %s »" % key)
 	check(1 in w.tutorial.done, "l'étape « toucher un village » est validée")
+	# Surbrillance de l'élément visé par l'étape suivante (Pouvoirs si le tiroir est fermé, sinon la catégorie « Signes »).
+	for round in 2:
+		main._update_tutorial()
+		await _frames(6)
+		var hl: Control = main.ui.tutorial_highlighted()
+		if main.ui.drawer.visible:
+			var on_screen: bool = hl != null and hl.get_global_rect().intersects(main.ui.family_scroll.get_global_rect())
+			check(hl != null and (hl.has_meta("family") or hl.has_meta("power")) and on_screen, "tutoriel étape 3, tiroir ouvert : la catégorie « Signes » est mise en évidence, à l'écran")
+			await _shot("demo_01b_tutoriel_surbrillance")
+		else:
+			check(hl == main.ui.rail_buttons.powers, "tutoriel étape 3, tiroir fermé : le bouton « Pouvoirs » est mis en évidence")
+		await _click_control(main.ui.rail_buttons.powers)
 	main.view.set_names(true)
 	main.view.set_borders(true)
 	await _shot("demo_02_fiche_village_noms_frontieres")
