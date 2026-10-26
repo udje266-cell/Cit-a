@@ -25,11 +25,23 @@
       "skillPath": "skills/godot/godot-animation/SKILL.md",
       "computedHash": "ae61cc2a2776ccac494530eefc56bc9322b7680bee91896377b48651cc07ed5e"
     },
+    "godot-export": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-export/SKILL.md",
+      "computedHash": "9f95f8c1eb0782f9b0a5644e5337a49a58c5b707013c6a3ef4d7bc3063cc971c"
+    },
     "godot-gdscript": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "sourceType": "github",
       "skillPath": "skills/godot/godot-gdscript/SKILL.md",
       "computedHash": "1faa18f58a46c2b45a89e4d3c2b0e6c6fe571dd1c353851ca9f56d02e85dd5b4"
+    },
+    "godot-gdscript-headless-testing": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-gdscript-headless-testing/SKILL.md",
+      "computedHash": "f7644d00477572d9f2cd082b18d16be676c3c905baffff145a075b97c0f21d1d"
     },
     "godot-nodes-scenes": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
@@ -61,11 +73,23 @@
       "skillPath": "skills/disciplines/input-systems/SKILL.md",
       "computedHash": "2d5a6b633eddb8ce1b5cf384947a86079a2ec58c3c388e9d89a04ff9cf7cd131"
     },
+    "performance-optimization": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/performance-optimization/SKILL.md",
+      "computedHash": "9fcdebae4de05bc36bb702e342475c242d12b590419a68f70b22518fa77082ec"
+    },
     "router": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "sourceType": "github",
       "skillPath": "router/SKILL.md",
       "computedHash": "25bd6eeaba4941252cb15aa0e1ddf4f965079b6550e63bf0b0a276936b0acf96"
+    },
+    "save-systems": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/save-systems/SKILL.md",
+      "computedHash": "f893265ad69b54d1123dd53d89548031fd411b664a4c9a5b1d45a23f54636fd8"
     }
   }
 }
