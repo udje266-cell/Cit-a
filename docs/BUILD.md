@@ -17,6 +17,8 @@ Commandes tactiles : glisser = tourner, pincer = zoom, toucher = sélectionner, 
 ```
 godot --headless --path . --import                       # première fois : importe le projet
 godot --headless --path . -s tests/run_tests.gd          # code de sortie 0 = succès
+godot --headless --path . -s tests/smoke_game.gd         # flux complet de l'interface
+xvfb-run godot --path . --rendering-method gl_compatibility -s tests/screenshot.gd -- <dossier>   # captures
 ```
 29 tests couvrent : catalogues, déterminisme et structure de la planète, héritage, sélection, mutations,
 incompatibilités, **répartition 2/3 – 1/3, naissances naturelles jamais doubles, distribution naturelle conforme,
@@ -38,18 +40,22 @@ godot --headless --path . --export-debug "Android" build/cit-a-debug.apk
 adb install -r build/cit-a-debug.apk
 ```
 
-## Vérifications réalisées dans cette version (0.1.0)
+## Vérifications réalisées (0.1.0, Godot 4.4.1 sur Linux)
 | Vérification | Résultat |
 |---|---|
-| Analyse syntaxique de tous les scripts (`gdparse` de gdtoolkit 4) | ✅ 16/16 fichiers valides |
-| Validité JSON et cohérence des catalogues (incompatibilités et prérequis existants, 104 traits) | ✅ (script Python) |
-| Exécution des tests Godot | ❌ **non réalisée** : le téléchargement et l'exécution du binaire Godot ont été refusés dans l'environnement de développement |
-| Lancement du jeu, rendu, gestes tactiles | ❌ non réalisé (pas de Godot) |
-| APK Android | ❌ non produit : Godot, les modèles d'export, le JDK et le SDK Android sont absents, ainsi que tout appareil ou émulateur |
-| Mesures CPU / GPU / mémoire sur Android | ❌ non réalisées ; cibles proposées dans ARCHITECTURE.md |
+| Compilation de tous les scripts (`--check-only`) | ✅ après correction de 10 erreurs de typage (`:=` sur des valeurs non typées, un type de conteneur) |
+| `tests/run_tests.gd` | ✅ **29/29 tests, 343 assertions** (dont les 11 tests de la règle Magie/Épée) |
+| Bugs trouvés par les tests et corrigés | les couples fondateurs ne se reproduisaient jamais (seuil de naissance à 2 habitants) ; un test d'explication fragile ; un test de capacité qui ne mesurait pas la durée du dépassement |
+| `tests/smoke_game.gd` (flux complet du jeu : menu → fondateurs → 120 ans → pouvoirs → don d'affinité → 9 cartes → fiches → règles → export → sauvegarde → reprise) | ✅ aucune erreur |
+| Rendu réel (Xvfb, moteur Compatibilité) : captures du menu, des fondateurs, de la planète, de la carte des peuples, de l'aperçu d'un pouvoir et des règles | ✅ ; corrigé : barres d'interface mal ancrées (HUD illisible, barre de pouvoirs invisible) |
+| Mesures PC (1 cœur, sans GPU) | tick 8,5 ms/an avec 38 établissements à l'an 250 ; maillage 66 126 sommets reconstruit en 25–30 ms ; mémoire statique 21 Mo |
+| Équilibre observé sur 2 ans × 3 peuples | 1 038 naissances ouvertes au divin et 519 naturelles (2:1 exact) ; ~38 établissements en 250 ans |
+| APK Android | ❌ non produit : modèles d'export, JDK 17 et SDK Android absents |
+| Gestes tactiles, IPS et mémoire sur appareil | ❌ non mesurés : aucun appareil ni émulateur |
 
-Conséquence : il faut s'attendre à des erreurs d'exécution au premier lancement. L'analyse syntaxique ne vérifie ni
-les types ni les noms d'API. Premier travail du jalon 2 : lancer les tests et les corriger.
+Écart avec la cible : le tick (8,5 ms sur PC) dépasse déjà la cible mobile de 4 ms. Pistes pour le jalon 2 :
+mettre en cache les statistiques par établissement (aujourd'hui recalculées plusieurs fois par tick) et calculer
+les conversions seulement entre voisins proches.
 
 ## Outils de l'environnement de développement (inspectés le 2026-10-26)
 | Élément | État |
@@ -68,4 +74,7 @@ les types ni les noms d'API. Premier travail du jalon 2 : lancer les tests et le
   besoin).
 - Le partage en ligne n'est pas connecté ; seul l'export/import local de fichiers `.cworld` est fourni.
 - L'import se limite au dossier d'export du jeu (pas de sélecteur de fichiers Android).
-- L'équilibrage n'a pas été joué.
+- L'équilibrage n'a pas été joué par un humain. La croissance est lente au début : environ 50 ans pour passer
+  du couple fondateur à 10 habitants.
+- Icône provisoire (`icon.svg`) inspirée de l'illustration fournie : l'image originale doit être ajoutée au dépôt
+  (`icon.png`, 512×512 minimum) pour être utilisée comme icône Android.

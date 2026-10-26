@@ -142,7 +142,7 @@ func _find_start_cell(species_id: String) -> int:
 		var c := rng.randi_range(0, planet.cell_count - 1)
 		if not planet.is_land(c) or owner[c] != -1 or _too_close(c, 6):
 			continue
-		var sc := float(hab.get(planet.biome_name(c), 0.0)) * (0.4 + planet.fertility[c])
+		var sc: float = float(hab.get(planet.biome_name(c), 0.0)) * (0.4 + planet.fertility[c])
 		if planet.is_coastal(c):
 			sc += float(cat.species[species_id].get("coastal_bonus", 0.1))
 		if sc > best_score:

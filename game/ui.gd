@@ -18,7 +18,7 @@ var top_label: Label
 var speed_buttons := {}
 var info_panel: PanelContainer
 var info_text: RichTextLabel
-var info_buttons: HBoxContainer
+var info_buttons: Container
 var family_bar: HBoxContainer
 var power_bar: HBoxContainer
 var confirm_bar: PanelContainer
@@ -36,7 +36,7 @@ var _dirty := true
 
 func build(p_main) -> void:
 	main = p_main
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var th := Theme.new()
 	th.default_font_size = 22
@@ -47,9 +47,11 @@ func build(p_main) -> void:
 	_build_confirm_bar()
 	_build_log_panel()
 	tutorial_label = Label.new()
-	tutorial_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	tutorial_label.position = Vector2(-380, 64)
-	tutorial_label.size = Vector2(760, 0)
+	tutorial_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	tutorial_label.offset_left = -380
+	tutorial_label.offset_right = 380
+	tutorial_label.offset_top = 72
+	tutorial_label.offset_bottom = 140
 	tutorial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tutorial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tutorial_label.add_theme_color_override("font_color", Color(1, 0.92, 0.6))
@@ -101,13 +103,14 @@ func _button(text: String, cb: Callable, min_w: float = 0.0) -> Button:
 func _build_top_bar() -> void:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _panel_style())
-	panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	add_child(panel)
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 8)
 	panel.add_child(h)
 	top_label = Label.new()
 	top_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_label.custom_minimum_size.x = 380
 	top_label.clip_text = true
 	h.add_child(top_label)
 	overlay_option = OptionButton.new()
@@ -151,7 +154,7 @@ func _build_info_panel() -> void:
 	info_text.fit_content = true
 	info_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(info_text)
-	info_buttons = HBoxContainer.new()
+
 	var flow := HFlowContainer.new()
 	v.add_child(flow)
 	info_buttons = flow
@@ -213,7 +216,7 @@ func refresh_info() -> void:
 func _build_power_bar() -> void:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _panel_style())
-	panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	panel.offset_top = -160
 	add_child(panel)
 	var v := VBoxContainer.new()
@@ -272,7 +275,7 @@ func _rebuild_powers() -> void:
 func _build_confirm_bar() -> void:
 	confirm_bar = PanelContainer.new()
 	confirm_bar.add_theme_stylebox_override("panel", _panel_style(0.95))
-	confirm_bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	confirm_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	confirm_bar.offset_left = -420; confirm_bar.offset_right = 420; confirm_bar.offset_top = -330; confirm_bar.offset_bottom = -170
 	add_child(confirm_bar)
 	var h := HBoxContainer.new()
@@ -377,15 +380,15 @@ func set_tutorial(text: String) -> void:
 func open_modal(title: String, wide: bool = false) -> VBoxContainer:
 	close_modal()
 	modal = Control.new()
-	modal.set_anchors_preset(Control.PRESET_FULL_RECT)
+	modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(modal)
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.5)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	modal.add_child(dim)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _panel_style(0.97))
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var m := 40 if wide else 140
 	panel.offset_left = m; panel.offset_right = -m; panel.offset_top = 30; panel.offset_bottom = -30
 	modal.add_child(panel)
@@ -549,7 +552,7 @@ func _rule_row(d: Dictionary, r: Dictionary) -> Control:
 	var name_edit := LineEdit.new(); name_edit.text = r.name; name_edit.custom_minimum_size.x = 260
 	name_edit.text_changed.connect(func(tx): r.name = tx)
 	h.add_child(name_edit)
-	var pr := SpinBox.new(); pr.prefix = "Priorité"; pr.min_value = 0; pr.max_value = 99; pr.value = int(r.priority)
+	var pr := SpinBox.new(); pr.prefix = "Priorité"; pr.min_value = 0; pr.max_value = 99; pr.value = int(r.priority); pr.custom_minimum_size.x = 190
 	pr.value_changed.connect(func(vv): r.priority = int(vv))
 	h.add_child(pr)
 	var res := OptionButton.new()
@@ -559,7 +562,7 @@ func _rule_row(d: Dictionary, r: Dictionary) -> Control:
 			res.select(res.item_count - 1)
 	res.item_selected.connect(func(idx): r.result = [Affinity.MAGIC, Affinity.SWORD, Affinity.BOTH][idx])
 	h.add_child(res)
-	var mx := SpinBox.new(); mx.prefix = "Max/an"; mx.min_value = 0; mx.max_value = 500; mx.value = int(r.max_per_year)
+	var mx := SpinBox.new(); mx.prefix = "Max/an"; mx.min_value = 0; mx.max_value = 500; mx.value = int(r.max_per_year); mx.custom_minimum_size.x = 190
 	mx.value_changed.connect(func(vv): r.max_per_year = int(vv))
 	h.add_child(mx)
 	h.add_child(_button("Supprimer", func():

@@ -130,7 +130,7 @@ static func _divine_birth(world, s: Dictionary, cfg: Dictionary) -> String:
 	return NONE
 
 static func _deity_for_birth(world, s: Dictionary):
-	var r := world.rng.randf()
+	var r: float = world.rng.randf()
 	for rid in s.faith:
 		r -= float(s.faith[rid])
 		if r <= 0.0:

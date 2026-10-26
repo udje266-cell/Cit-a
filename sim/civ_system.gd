@@ -105,7 +105,7 @@ static func _settlement_year(w, s: Dictionary, cfg: Dictionary, fx: Dictionary) 
 	# Naissances entières, résolues une par une pour les affinités.
 	var br := float(cfg.birth_rate) * (0.5 + float(sp.growth) * 20.0 * float(st.fert))
 	var births_f := pop * br * maxf(0.0, 1.0 - pop / (1.1 * k))
-	if pop < 2.0:
+	if pop < 1.0:
 		births_f = 0.0
 	s.birth_acc = float(s.birth_acc) + births_f
 	var births := int(floor(s.birth_acc))
@@ -207,7 +207,7 @@ static func _try_expand(w, s: Dictionary, cfg: Dictionary, st: Dictionary, k: fl
 		if crowded:
 			continue
 		var d: float = w.planet.pos[c].distance_to(w.planet.pos[int(s.cell)])
-		var sc := cell_food(w, c, p.species, st, fx) - d * 0.6 + w.rng.randf() * 0.05
+		var sc: float = cell_food(w, c, p.species, st, fx) - d * 0.6 + w.rng.randf() * 0.05
 		if sc > best_score:
 			best_score = sc
 			best = c
@@ -326,7 +326,7 @@ static func _research(w, p: Dictionary, fx: Dictionary) -> void:
 	var sp0: Dictionary = w.people_settlements(int(p.id))[0]
 	var st := stats_of(w, sp0)
 	var t: Dictionary = w.cat.techs[cur]
-	var pts := pow(agg.pop, 0.6) * (0.4 + float(st.int) * 0.6 + float(st.cur) * 0.3) * (0.5 + agg.stability)
+	var pts: float = pow(agg.pop, 0.6) * (0.4 + float(st.int) * 0.6 + float(st.cur) * 0.3) * (0.5 + agg.stability)
 	pts *= float(w.cat.config.civ.research_scale) * (1.0 + float(fx.get("research_mult", 0.0)))
 	match str(t.path):
 		"science":
@@ -352,7 +352,7 @@ static func _choose_tech(w, p: Dictionary, avail: Array) -> String:
 	var best_sc := -INF
 	for tid in avail:
 		var t: Dictionary = w.cat.techs[tid]
-		var sc := -float(t.cost) / 100.0 + w.rng.randf() * 0.5
+		var sc: float = -float(t.cost) / 100.0 + w.rng.randf() * 0.5
 		match str(t.path):
 			"science": sc += float(p.lean) * 1.5
 			"magic": sc -= float(p.lean) * 1.5

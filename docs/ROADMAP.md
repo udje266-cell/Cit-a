@@ -5,14 +5,14 @@ Légende :
 - 🟡 **codé** : présent dans les sources et validé syntaxiquement, mais **pas encore exécuté** (voir BUILD.md : Godot n'a pas pu tourner dans l'environnement de développement).
 - ⬜ **prévu** : pas encore commencé.
 
-> État honnête du jalon 1 : tout le code ci-dessous est 🟡. Aucune fonctionnalité n'est ✅ tant que
-> `tests/run_tests.gd` n'a pas été lancé avec Godot et que le jeu n'a pas été ouvert sur un appareil.
+> État du jalon 1 : simulation ✅ (29 tests), flux d'interface ✅ (test de fumée + captures sur PC).
+> Reste 🟡 : gestes tactiles et performances **sur Android** (pas d'appareil ni de SDK disponible).
 
 ## Jalon 0 — Références (✅ rédigés)
 Vision, architecture, règles, catalogues (6 espèces, 104 traits, 29 découvertes, 18 pouvoirs, 12 accomplissements),
 plan, registre des décisions.
 
-## Jalon 1 — Première boucle jouable (🟡 codé)
+## Jalon 1 — Première boucle jouable (✅ sur PC, 🟡 sur Android)
 | # | Exigence | Implémentation |
 |---|---|---|
 | 1 | Petite planète sphérique | `sim/planet.gd` (2 562 cellules, graine), `game/planet_view.gd` |
@@ -28,8 +28,8 @@ Déjà présents en version simple (🟡) : diplomatie minimale (contact, relati
 sécessions, progression pendant l'absence avec résumé, tutoriel en 5 étapes, cartes thématiques (9).
 
 ## Jalon 2 — Vérification et réglages (⬜ prochaine étape)
-1. Lancer `tests/run_tests.gd`, corriger les échecs, puis mesurer le temps d'un tick.
-2. Ouvrir le jeu sur PC : parcours complet du menu à la reprise de partie.
+1. ✅ Tests lancés et corrigés ; parcours complet vérifié sur PC.
+2. Réduire le coût d'un tick (8,5 ms sur PC, cible ≤ 4 ms sur mobile).
 3. Compiler l'APK et tester sur un Android milieu de gamme : gestes, lisibilité, IPS, mémoire.
 4. Équilibrage : rythme d'apparition des villages, revenus de foi, coûts des pouvoirs et des affinités.
 5. Enregistrer les mesures dans ARCHITECTURE.md (cibles initiales → mesurées).

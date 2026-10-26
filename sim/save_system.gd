@@ -134,7 +134,7 @@ static func export_world(w, kind: String) -> String:
 	else:
 		data = w.to_dict()
 		data["kind"] = "evolved"
-	var safe := w.world_name.validate_filename().replace(" ", "_")
+	var safe: String = w.world_name.validate_filename().replace(" ", "_")
 	var path := "%s/%s_%s_an%d%s" % [EXPORTS, safe, kind, w.year, EXT]
 	return path if _write_compressed(path, data) else ""
 

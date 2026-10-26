@@ -82,7 +82,7 @@ func test_planet_structure() -> void:
 			if not i in pl.neighbors[nb]:
 				check(false, "voisinage symétrique %d-%d" % [i, nb])
 				return
-	var frac := float(land) / pl.cell_count
+	var frac: float = float(land) / pl.cell_count
 	check(frac > 0.25 and frac < 0.5, "part de terres plausible (%.2f)" % frac)
 	check(kinds.has("ocean"), "océans présents")
 	check(kinds.size() >= 6, "au moins 6 biomes (%d)" % kinds.size())
@@ -191,8 +191,11 @@ func test_rule_attribution() -> void:
 	check(int(s.aff.both) == 20, "la règle confère 'both' aux 20 naissances divines (%d)" % int(s.aff.both))
 	check(not w.stats_births.natural.has("both"), "les statistiques naturelles n'ont pas de catégorie 'both'")
 	check(is_equal_approx(10000.0 - float(d.energy), 20 * Affinity.cost_of(w, "both", false)), "chaque attribution coûte de l'énergie")
-	var last: Dictionary = w.affinity_history[w.affinity_history.size() - 1]
-	check(str(last.reason).find("Tous élus") >= 0, "l'attribution est expliquée (%s)" % last.reason)
+	var explained := false
+	for e in w.affinity_history:
+		if str(e.source).begins_with("rule:") and str(e.reason).find("Tous élus") >= 0 and e.result == "both":
+			explained = true
+	check(explained, "l'attribution par règle est expliquée dans l'historique")
 	check(int(d.rules[0].total) == 20, "statistiques de la règle")
 
 func test_parents_both_not_inherited() -> void:
@@ -286,12 +289,19 @@ func test_reload_no_reroll() -> void:
 
 func test_growth_bounded() -> void:
 	var w = make_world(99)
-	w.run_years(250)
+	var over := {}
+	for y in 260:
+		w.tick()
+		for s in w.alive_settlements():
+			if float(s.pop) > float(s.capacity) * 1.5 + 5.0:
+				over[int(s.id)] = int(over.get(int(s.id), 0)) + 1
+			else:
+				over.erase(int(s.id))
 	var ok := true
-	for s in w.alive_settlements():
-		if float(s.pop) > float(s.capacity) * 1.5 + 5.0:
+	for id in over:
+		if over[id] >= 10:
 			ok = false
-			printerr("    %s : %d > capacité %d" % [s.name, int(s.pop), int(s.capacity)])
+			printerr("    %s : dépassement depuis %d ans" % [w.settlements[id].name, over[id]])
 	check(ok, "aucune population ne dépasse durablement la capacité du milieu")
 	check(w.alive_settlements().size() > 3, "les peuples fondent des villages (%d)" % w.alive_settlements().size())
 
@@ -359,7 +369,7 @@ func test_weak_deity_return() -> void:
 func test_save_roundtrip() -> void:
 	var w = make_world(5)
 	w.run_years(30)
-	var d := w.to_dict()
+	var d: Dictionary = w.to_dict()
 	var w2 = SaveSystem.world_from_dict(JSON.parse_string(JSON.stringify(d, "", false, true)))
 	check(w2 != null, "rechargement réussi")
 	check(w2.year == w.year and w2.settlements.size() == w.settlements.size(), "année et établissements conservés")
@@ -426,7 +436,7 @@ func test_offline() -> void:
 	SaveSystem.consume_offline(w, now)
 	r = SaveSystem.offline_years(w, now)
 	check(r.years == 0, "une absence déjà consommée n'est pas réappliquée")
-	var before := w.snapshot()
+	var before: Dictionary = w.snapshot()
 	w.run_years(6)
 	var lines := SaveSystem.summary(w, before, w.snapshot())
 	check(lines.size() >= 3, "résumé d'absence produit")

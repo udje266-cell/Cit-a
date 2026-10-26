@@ -17,4 +17,4 @@ godot --path .                                     # jouer
 godot --headless --path . -s tests/run_tests.gd    # tests de la simulation
 ```
 
-Version 0.1.0 : le jalon 1 est entièrement codé, mais **n'a pas encore été exécuté** (voir BUILD.md).
+Version 0.1.0 : jalon 1 vérifié sur PC (29 tests, test de fumée, captures). Pas encore testé sur Android (voir BUILD.md).

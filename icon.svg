@@ -1,1 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="24" fill="#10131f"/><polygon points="64,14 107,39 107,89 64,114 21,89 21,39" fill="#3d8bd4"/><polygon points="64,30 92,46 86,78 58,92 36,74 40,46" fill="#5fae5a"/><polygon points="62,44 78,52 74,70 60,76 50,64 52,50" fill="#c9a35b"/><circle cx="64" cy="20" r="7" fill="#ffd34d"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="70%"><stop offset="0" stop-color="#3b2a8a"/><stop offset="1" stop-color="#120e3a"/></radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0.75" stop-color="#ffd25a" stop-opacity="0.9"/><stop offset="1" stop-color="#ffb020" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#c9871f"/></linearGradient>
+    <linearGradient id="cry" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0c8ff"/><stop offset="0.5" stop-color="#9b4dff"/><stop offset="1" stop-color="#3a1fbf"/></linearGradient>
+    <clipPath id="globe"><circle cx="256" cy="232" r="138"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- halo et étoile -->
+  <circle cx="256" cy="232" r="166" fill="url(#glow)"/>
+  <path d="M256 22 L264 76 L256 92 L248 76 Z" fill="#fff3c0"/>
+  <path d="M110 200 A150 150 0 0 1 402 200" fill="none" stroke="#ffcf5a" stroke-width="6" opacity="0.8"/>
+  <!-- épée -->
+  <g transform="rotate(-38 140 150)">
+    <polygon points="134,120 146,120 150,300 140,322 130,300" fill="#e9eef7"/>
+    <polygon points="140,120 146,120 150,300 140,322" fill="#b8c3d6"/>
+    <rect x="96" y="108" width="88" height="16" rx="6" fill="url(#gold)"/>
+    <rect x="132" y="56" width="16" height="54" rx="5" fill="#3a2c4a"/>
+    <polygon points="140,30 156,46 140,62 124,46" fill="url(#gold)"/>
+    <polygon points="140,108 150,116 140,124 130,116" fill="#2f6bff"/>
+  </g>
+  <!-- cristal -->
+  <ellipse cx="402" cy="214" rx="58" ry="20" fill="none" stroke="#c07bff" stroke-width="5" opacity="0.7" transform="rotate(-20 402 214)"/>
+  <polygon points="402,110 440,170 420,300 384,300 366,170" fill="url(#cry)"/>
+  <polygon points="402,110 440,170 402,190" fill="#e6c4ff" opacity="0.8"/>
+  <polygon points="402,190 420,300 384,300" fill="#5a2be0" opacity="0.6"/>
+  <!-- planète low poly -->
+  <g clip-path="url(#globe)">
+    <rect x="100" y="80" width="320" height="320" fill="#1f8fd6"/>
+    <polygon points="118,130 220,96 250,170 196,236 130,214" fill="#79c43a"/>
+    <polygon points="150,150 200,120 222,170 176,200" fill="#5fae2e"/>
+    <polygon points="250,110 380,120 392,190 320,218 268,170" fill="#8bd043"/>
+    <polygon points="300,240 396,226 390,320 320,330" fill="#79c43a"/>
+    <polygon points="150,260 230,250 248,330 170,360" fill="#6cbc35"/>
+    <polygon points="200,300 250,280 260,330 220,350" fill="#2aa9e8" opacity="0.6"/>
+    <polygon points="160,150 182,104 204,150" fill="#f2f4fa"/>
+    <polygon points="182,104 204,150 182,150" fill="#a9b3c9"/>
+    <polygon points="146,200 164,166 182,200" fill="#e9edf6"/>
+    <polygon points="0,0 512,0 512,40 0,40" fill="none"/>
+    <path d="M100 330 L420 300 L420 400 L100 400 Z" fill="#000" opacity="0.18"/>
+  </g>
+  <!-- château -->
+  <rect x="300" y="132" width="44" height="32" fill="#f1e2c0"/>
+  <rect x="314" y="108" width="16" height="30" fill="#f6ead0"/>
+  <polygon points="310,110 322,90 334,110" fill="#e0a92f"/>
+  <polygon points="296,134 304,120 312,134" fill="#e0a92f"/>
+  <polygon points="332,134 340,120 348,134" fill="#e0a92f"/>
+  <circle cx="256" cy="232" r="138" fill="none" stroke="#ffe07a" stroke-width="5" opacity="0.9"/>
+  <!-- main dorée -->
+  <path d="M150 388 C176 362 214 372 236 382 L276 382 C306 372 352 360 368 380 C372 392 352 396 330 402 L360 392 C370 400 350 418 320 426 L300 512 L214 512 L200 432 C176 420 156 404 150 388 Z" fill="url(#gold)"/>
+  <path d="M214 470 L300 466" stroke="#b97a1a" stroke-width="5" opacity="0.7"/>
+</svg>

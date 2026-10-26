@@ -26,7 +26,7 @@ func build(p_cat, initial_energy: float) -> void:
 	cat = p_cat
 	energy_available = initial_energy
 	_rng.randomize()
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.06, 0.1, 0.92)
 	add_theme_stylebox_override("panel", sb)
