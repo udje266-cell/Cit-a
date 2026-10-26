@@ -10,6 +10,7 @@ const Faith = preload("res://sim/faith_system.gd")
 const Powers = preload("res://sim/powers.gd")
 const RivalAI = preload("res://sim/rival_ai.gd")
 const Diplomacy = preload("res://sim/diplomacy.gd")
+const History = preload("res://sim/history.gd")
 
 const SAVE_VERSION := 1
 const LOG_MAX := 400
@@ -27,6 +28,7 @@ var deities: Array = []
 var relations: Dictionary = {}       # "a:b" (a<b) -> {value, war, since, alliance, contact}
 var pending: Array = []              # effets différés
 var chronicle: Array = []
+var series: Dictionary = History.empty()
 var owner: Array = []                # cellule -> id d'établissement ou -1 (Array : modifié en place depuis les systèmes)
 var birth_counter: int = 0
 var stats_births: Dictionary = {}
@@ -246,6 +248,7 @@ func tick_step(budget_usec: int) -> bool:
 		if Time.get_ticks_usec() - start > budget_usec:
 			return false
 	RivalAI.tick(self)
+	History.tick(self)
 	if year % 5 == 0:
 		Faith.check_achievements(self)
 	tick_cache.clear()
@@ -355,7 +358,7 @@ func to_dict() -> Dictionary:
 		"planet": planet.to_dict(), "peoples": peoples, "settlements": settlements, "religions": religions,
 		"deities": deities, "relations": relations, "pending": pending, "log": chronicle,
 		"birth_counter": birth_counter, "stats_births": stats_births, "affinity_history": affinity_history,
-		"player_deity": player_deity, "tutorial": tutorial,
+		"player_deity": player_deity, "tutorial": tutorial, "series": series,
 		"offline_consumed_until": offline_consumed_until, "last_saved_unix": last_saved_unix}
 
 func from_dict(d: Dictionary) -> void:
@@ -376,6 +379,7 @@ func from_dict(d: Dictionary) -> void:
 	affinity_history = d.affinity_history
 	player_deity = int(d.player_deity)
 	tutorial = d.get("tutorial", {"step": 0, "done": []})
+	series = d.get("series", History.empty())
 	offline_consumed_until = int(d.get("offline_consumed_until", 0))
 	last_saved_unix = int(d.get("last_saved_unix", 0))
 	rng.seed = int(d.rng_seed)

@@ -9,6 +9,8 @@ const Civ = preload("res://sim/civ_system.gd")
 const Faith = preload("res://sim/faith_system.gd")
 const Powers = preload("res://sim/powers.gd")
 const Diplomacy = preload("res://sim/diplomacy.gd")
+const History = preload("res://sim/history.gd")
+const Chart = preload("res://game/chart.gd")
 const Planet = preload("res://sim/planet.gd")
 const PlanetView = preload("res://game/planet_view.gd")
 const Icons = preload("res://game/icons.gd")
@@ -632,6 +634,30 @@ func show_peoples() -> void:
 		row.add_child(_button("Voir", main.focus_people.bind(int(p.id))))
 		row.add_child(_button("Fiche", show_people.bind(int(p.id))))
 		body.add_child(row)
+	body.add_child(_rich("\n[b]Population par peuple[/b]"))
+	var pop_series := []
+	for p in world.peoples:
+		var ps: Dictionary = world.series.peoples.get(str(int(p.id)), {})
+		if not ps.is_empty():
+			pop_series.append({"name": p.name, "color": Color(p.color[0], p.color[1], p.color[2]), "start": int(ps.start), "v": ps.pop})
+	body.add_child(_chart(pop_series))
+	body.add_child(_rich("\n[b]Fidèles par divinité[/b]"))
+	var dseries := []
+	var pal := [Color("#f2c14e"), Color("#7fb8e6"), Color("#e07a5f"), Color("#81b29a"), Color("#b388eb"), Color("#f4a261")]
+	for d in world.deities:
+		var ds: Dictionary = world.series.deities.get(str(int(d.id)), {})
+		if not ds.is_empty():
+			dseries.append({"name": d.name, "color": pal[int(d.id) % pal.size()], "start": int(ds.start), "v": ds.v})
+	body.add_child(_chart(dseries))
+	var tree := "\n[b]Arbre des peuples[/b] (filiation par scission)\n"
+	for e in History.lineage(world):
+		tree += "%s%s %s\n" % ["    ".repeat(int(e.depth)), "└" if int(e.depth) > 0 else "•", e.text]
+	body.add_child(_rich(tree))
+
+func _chart(series: Array, percent: bool = false) -> Control:
+	var c := Chart.new()
+	c.setup(world.series.years, series, percent)
+	return c
 
 func show_overlays() -> void:
 	var body := open_modal("Cartes thématiques")
@@ -762,6 +788,25 @@ func show_people(pid: int) -> void:
 	for hst in p.history.slice(maxi(0, p.history.size() - 15)):
 		t += "  An %d — %s\n" % [int(hst.year), hst.text]
 	body.add_child(_rich(t))
+	var ps: Dictionary = world.series.peoples.get(str(pid), {})
+	if not ps.is_empty():
+		body.add_child(_rich("[b]Porteurs d'affinité[/b]"))
+		body.add_child(_chart([{"name": "Magie", "color": Color("#b388eb"), "start": int(ps.start), "v": ps.magic},
+			{"name": "Épée", "color": Color("#e07a5f"), "start": int(ps.start), "v": ps.sword}], true))
+		body.add_child(_rich("[b]Évolution des traits héréditaires[/b] (fréquence)"))
+		var pal := [Color("#81b29a"), Color("#f2c14e"), Color("#7fb8e6"), Color("#e07a5f"), Color("#b388eb"), Color("#f4a261"), Color("#cccccc"), Color("#9ad1d4")]
+		var ts := []
+		var i := 0
+		for tid in ps.traits:
+			var tr: Dictionary = ps.traits[tid]
+			ts.append({"name": world.cat.traits[tid].name if world.cat.traits.has(tid) else tid, "color": pal[i % pal.size()], "start": int(ps.start) + int(tr.start), "v": tr.v})
+			i += 1
+		if ts.is_empty():
+			body.add_child(_rich("  Aucun trait héréditaire présent pour l'instant (fondateurs sans trait héréditaire, aucune mutation fixée)."))
+		else:
+			body.add_child(_chart(ts.slice(0, 8), true))
+	if int(p.get("parent", -1)) >= 0:
+		body.add_child(_rich("Issu par scission de %s." % world.peoples[int(p.parent)].name))
 	body.add_child(_rich("\n[b]Établissements[/b]"))
 	for st in world.people_settlements(pid):
 		var row := HBoxContainer.new()

@@ -69,3 +69,11 @@ Toute décision qui la contredit doit d'abord modifier ce fichier.
   l'agressivité) ou le rompt (relation −0,5). Les dieux rivaux concluent des pactes entre eux au-delà de 0,5.
 - Vérifié sur 2 parties de 500 ans : guerres et paix (11/11), alliances, pactes et accords apparaissent. Conquêtes et
   unions restent rares ; leur réglage relève de l'équilibrage (tâche suivante).
+
+## D41 — Séries historiques, graphiques et arbre des peuples (`sim/history.gd`, `game/chart.gd`)
+- Un point tous les 5 ans : population, part des porteurs Magie/Épée et fréquence des traits héréditaires par
+  peuple (6 plus fréquents, puis suivis jusqu'au bout), fidèles par dieu. Au-delà de 240 points, un point sur deux
+  est retiré et l'intervalle double : taille de sauvegarde bornée quelle que soit la durée de la partie.
+- « Peuples » affiche la population par peuple, les fidèles par dieu et l'arbre des peuples (scissions, unions,
+  disparitions) ; la fiche d'un peuple affiche ses affinités et l'évolution de ses traits.
+- Graphique dessiné par `_draw` (aucune dépendance). Captures : `docs/captures/graphes_*.png`.

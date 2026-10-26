@@ -12,6 +12,7 @@ const Faith = preload("res://sim/faith_system.gd")
 const SaveSystem = preload("res://sim/save_system.gd")
 const Civ = preload("res://sim/civ_system.gd")
 const Diplomacy = preload("res://sim/diplomacy.gd")
+const History = preload("res://sim/history.gd")
 
 var passed := 0
 var failed := 0
@@ -25,7 +26,7 @@ func _init() -> void:
 		"test_birth_split", "test_natural_never_both", "test_natural_distribution",
 		"test_no_divine_attribution", "test_rule_attribution", "test_parents_both_not_inherited",
 		"test_genetics_never_touch_affinity", "test_late_grant", "test_manual_orders", "test_budget_limit",
-		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_growth_bounded", "test_powers", "test_delayed_effect",
+		"test_reload_no_reroll", "test_affinity_origins", "test_sliced_tick", "test_large_world", "test_diplomacy", "test_history", "test_growth_bounded", "test_powers", "test_delayed_effect",
 		"test_conversion", "test_weak_deity_return", "test_save_roundtrip", "test_save_files",
 		"test_migration_v0", "test_export_import", "test_offline", "test_benchmark",
 	]
@@ -386,6 +387,38 @@ func test_diplomacy() -> void:
 	check(not Diplomacy.propose_pact(w, w.player_deity, other).ok, "pacte refusé sans énergie")
 	w.run_years(30)
 	check(true, "la simulation continue après conquête et fusion")
+
+func test_history() -> void:
+	var w = make_world(12)
+	w.run_years(40)
+	var h: Dictionary = w.series
+	check(h.years.size() == 8, "séries : un point tous les 5 ans (%d)" % h.years.size())
+	var ps: Dictionary = h.peoples["0"]
+	check(ps.pop.size() == h.years.size() - int(ps.start) and float(ps.pop[ps.pop.size() - 1]) > 0.0, "séries : population du joueur enregistrée")
+	var ok := true
+	for t in ps.traits:
+		if int(ps.traits[t].start) + ps.traits[t].v.size() != ps.pop.size():
+			ok = false
+	check(ok and ps.traits.size() > 0, "séries : traits alignés sur les années")
+	# Réduction : au-delà du maximum, l'intervalle double et les séries restent alignées.
+	for i in 250:
+		h.years.append(w.year + 5 * (i + 1))
+		for k in h.peoples:
+			h.peoples[k].pop.append(1.0); h.peoples[k].magic.append(0.0); h.peoples[k].sword.append(0.0)
+			for t in h.peoples[k].traits:
+				h.peoples[k].traits[t].v.append(0.1)
+		for k in h.deities:
+			h.deities[k].v.append(1)
+	History._halve(h)
+	ps = h.peoples["0"]
+	var ok2: bool = int(h.step) == 10 and ps.pop.size() == h.years.size() - int(ps.start)
+	for t in ps.traits:
+		if int(ps.traits[t].start) + ps.traits[t].v.size() != ps.pop.size():
+			ok2 = false
+	check(ok2, "séries : réduction alignée (%d points)" % h.years.size())
+	var w2 = SaveSystem.world_from_dict(JSON.parse_string(JSON.stringify(w.to_dict(), "", false, true)))
+	check(w2.series.years.size() == h.years.size(), "séries : conservées à la sauvegarde")
+	check(History.lineage(w).size() == w.peoples.size(), "arbre des peuples : chaque peuple apparaît une fois")
 
 func test_reload_no_reroll() -> void:
 	var w = make_world(77)
