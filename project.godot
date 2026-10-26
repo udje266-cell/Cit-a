@@ -1,0 +1,27 @@
+; Fichier de configuration du moteur Godot.
+config_version=5
+
+[application]
+
+config/name="Cit-a"
+config/description="Simulateur divin : planète sphérique, civilisations autonomes, affinités Magie et Épée."
+config/version="0.1.0"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.4", "Mobile")
+boot_splash/bg_color=Color(0.06, 0.07, 0.12, 1)
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=6
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_3d=1

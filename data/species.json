@@ -1,0 +1,30 @@
+{
+  "stats": ["str","end","int","cur","soc","coop","agg","cou","spi","mag","sci","fert","lon","cold","heat","aqua","forest","mount","desert","disease","food","craft"],
+  "species": [
+    {"id":"sylvain","name":"Sylvains","desc":"Peuple sylvestre à la peau d'écorce. Longévité élevée, reproduction lente, forte affinité magique.",
+     "color":[0.36,0.72,0.38],"longevity":220,"generation_years":45,"growth":0.012,"magic_potential":1.4,
+     "habitat":{"temperate_forest":1.0,"rainforest":0.9,"taiga":0.6,"grassland":0.4,"savanna":0.3,"tundra":0.1,"desert":0.05,"mountain":0.15},
+     "base":{"int":0.5,"cur":0.4,"spi":0.6,"mag":0.6,"sci":0.3,"fert":0.35,"lon":0.8,"forest":0.6,"str":0.35,"end":0.45,"soc":0.5,"coop":0.6,"agg":0.25,"cou":0.4,"food":0.5,"craft":0.4,"cold":0.3,"heat":0.4,"aqua":0.2,"mount":0.2,"desert":0.1,"disease":0.5}},
+    {"id":"terragne","name":"Terragnes","desc":"Bâtisseurs trapus nés de la roche. Robustes et habiles, peu enclins à la magie.",
+     "color":[0.68,0.52,0.36],"longevity":140,"generation_years":30,"growth":0.018,"magic_potential":0.6,
+     "habitat":{"mountain":1.0,"grassland":0.6,"taiga":0.5,"tundra":0.4,"temperate_forest":0.5,"desert":0.3,"savanna":0.4,"rainforest":0.2,"snow_peak":0.2},
+     "base":{"str":0.7,"end":0.65,"int":0.45,"cur":0.35,"craft":0.7,"sci":0.55,"mag":0.2,"mount":0.7,"cold":0.5,"heat":0.4,"fert":0.45,"lon":0.55,"soc":0.5,"coop":0.55,"agg":0.4,"cou":0.55,"spi":0.45,"forest":0.3,"aqua":0.1,"desert":0.3,"food":0.5,"disease":0.55}},
+    {"id":"ondin","name":"Ondins","desc":"Amphibiens des rivages, pêcheurs et navigateurs, sensibles à la sécheresse.",
+     "color":[0.28,0.6,0.85],"longevity":90,"generation_years":22,"growth":0.024,"magic_potential":1.0,
+     "habitat":{"grassland":0.7,"rainforest":0.8,"temperate_forest":0.6,"savanna":0.5,"taiga":0.3,"tundra":0.2,"desert":0.0,"mountain":0.1},
+     "coastal_bonus":0.6,
+     "base":{"aqua":0.9,"soc":0.6,"coop":0.6,"cur":0.6,"int":0.5,"mag":0.45,"sci":0.45,"fert":0.6,"lon":0.4,"str":0.45,"end":0.4,"agg":0.3,"cou":0.45,"spi":0.5,"cold":0.3,"heat":0.4,"forest":0.3,"mount":0.1,"desert":0.0,"food":0.55,"craft":0.45,"disease":0.4}},
+    {"id":"cendre","name":"Cendrés","desc":"Nés des braises du désert, fougueux, résistants à la chaleur, d'une magie ardente.",
+     "color":[0.88,0.42,0.22],"longevity":80,"generation_years":20,"growth":0.022,"magic_potential":1.2,
+     "habitat":{"desert":1.0,"savanna":0.9,"grassland":0.5,"mountain":0.4,"rainforest":0.2,"temperate_forest":0.2,"taiga":0.05,"tundra":0.0},
+     "base":{"heat":0.9,"desert":0.8,"agg":0.6,"cou":0.65,"mag":0.55,"spi":0.55,"str":0.55,"end":0.6,"int":0.45,"cur":0.5,"sci":0.35,"fert":0.5,"lon":0.35,"soc":0.45,"coop":0.4,"cold":0.05,"aqua":0.1,"forest":0.2,"mount":0.35,"food":0.6,"craft":0.45,"disease":0.5}},
+    {"id":"givrin","name":"Givrins","desc":"Peuple des glaces au sang lent. Endurants, patients, méditatifs.",
+     "color":[0.72,0.86,0.95],"longevity":160,"generation_years":35,"growth":0.014,"magic_potential":1.1,
+     "habitat":{"tundra":1.0,"taiga":0.9,"ice":0.4,"snow_peak":0.4,"mountain":0.5,"temperate_forest":0.4,"grassland":0.3,"desert":0.0,"savanna":0.05,"rainforest":0.0},
+     "base":{"cold":0.95,"end":0.75,"spi":0.65,"int":0.5,"coop":0.65,"lon":0.65,"mag":0.5,"sci":0.4,"fert":0.35,"heat":0.05,"str":0.5,"cur":0.35,"soc":0.45,"agg":0.25,"cou":0.5,"aqua":0.35,"forest":0.4,"mount":0.5,"desert":0.0,"food":0.65,"craft":0.5,"disease":0.6}},
+    {"id":"vivace","name":"Vivaces","desc":"Petits êtres curieux des plaines, à vie courte et reproduction rapide, très inventifs.",
+     "color":[0.95,0.8,0.3],"longevity":45,"generation_years":14,"growth":0.032,"magic_potential":0.8,
+     "habitat":{"grassland":1.0,"savanna":0.8,"temperate_forest":0.7,"rainforest":0.5,"taiga":0.4,"desert":0.2,"tundra":0.15,"mountain":0.2},
+     "base":{"cur":0.8,"int":0.6,"sci":0.65,"fert":0.8,"lon":0.15,"soc":0.65,"coop":0.5,"str":0.3,"end":0.35,"agg":0.35,"cou":0.4,"spi":0.4,"mag":0.35,"cold":0.3,"heat":0.4,"aqua":0.3,"forest":0.4,"mount":0.2,"desert":0.2,"food":0.45,"craft":0.55,"disease":0.35}}
+  ]
+}

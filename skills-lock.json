@@ -85,6 +85,12 @@
       "skillPath": "skills/game-builder/SKILL.md",
       "computedHash": "97de58a68687cf1395c79f6957a80dfa9961c69a6c6b72774cc65497f6898c75"
     },
+    "game-designer": {
+      "source": "setcodes/gamedev-skills",
+      "sourceType": "github",
+      "skillPath": "skills/game-designer/SKILL.md",
+      "computedHash": "2918d6758e6dcde95a21ae52c8764cdcfe7f123a53ccbd60ddebb73109eb2065"
+    },
     "game-feel": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "sourceType": "github",
@@ -1356,6 +1362,12 @@
       "sourceType": "github",
       "skillPath": "skills/disciplines/shader-programming/SKILL.md",
       "computedHash": "07fd9fd1ac34f951da3a82da21ace5234a53f035c688a1667a12233d65405c70"
+    },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "5ea13a6d9f0d4bb694405d79acd00cadec0d21bb138c4dd10fcf3c500cb835c2"
     },
     "steam-publish": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",

@@ -1,0 +1,648 @@
+{
+ "_doc": "Effets : height, moisture, temperature, fertility, resource, fervor, conversion, status, cleanse, pop, research, grant_affinity, memory. 'radius' = nombre de sauts de cellules. 'delayed' : effets appliqués 'after' années plus tard. 'unlock.level' : niveau divin requis.",
+ "level_xp": [
+  0,
+  20,
+  55,
+  110,
+  190,
+  300,
+  450
+ ],
+ "achievements": [
+  {
+   "id": "premier_village",
+   "name": "Premier village",
+   "desc": "Votre peuple fonde un deuxième établissement.",
+   "xp": 15,
+   "cond": {
+    "type": "settlements",
+    "value": 2
+   }
+  },
+  {
+   "id": "cinq_villages",
+   "name": "Une terre peuplée",
+   "desc": "Vos fidèles vivent dans 5 établissements.",
+   "xp": 30,
+   "cond": {
+    "type": "settlements",
+    "value": 5
+   }
+  },
+  {
+   "id": "cent_fideles",
+   "name": "Cent fidèles",
+   "desc": "100 fidèles croient en vous.",
+   "xp": 20,
+   "cond": {
+    "type": "believers",
+    "value": 100
+   }
+  },
+  {
+   "id": "cinq_cents_fideles",
+   "name": "Une foi qui grandit",
+   "desc": "500 fidèles.",
+   "xp": 40,
+   "cond": {
+    "type": "believers",
+    "value": 500
+   }
+  },
+  {
+   "id": "deux_mille_fideles",
+   "name": "Une religion",
+   "desc": "2 000 fidèles.",
+   "xp": 80,
+   "cond": {
+    "type": "believers",
+    "value": 2000
+   }
+  },
+  {
+   "id": "premier_miracle",
+   "name": "Premier miracle",
+   "desc": "Utiliser un pouvoir.",
+   "xp": 10,
+   "cond": {
+    "type": "powers_used",
+    "value": 1
+   }
+  },
+  {
+   "id": "dix_miracles",
+   "name": "Présence divine",
+   "desc": "Utiliser 10 pouvoirs.",
+   "xp": 25,
+   "cond": {
+    "type": "powers_used",
+    "value": 10
+   }
+  },
+  {
+   "id": "premiere_regle",
+   "name": "Loi divine",
+   "desc": "Activer une règle d'attribution d'affinité.",
+   "xp": 10,
+   "cond": {
+    "type": "rules_enabled",
+    "value": 1
+   }
+  },
+  {
+   "id": "cinquante_dons",
+   "name": "Dispensateur de dons",
+   "desc": "Attribuer 50 affinités.",
+   "xp": 30,
+   "cond": {
+    "type": "affinities_granted",
+    "value": 50
+   }
+  },
+  {
+   "id": "age_lames",
+   "name": "Âge des lames et des runes",
+   "desc": "Un peuple fidèle atteint l'époque 1.",
+   "xp": 30,
+   "cond": {
+    "type": "era",
+    "value": 1
+   }
+  },
+  {
+   "id": "age_royaumes",
+   "name": "Âge des royaumes",
+   "desc": "Un peuple fidèle atteint l'époque 2.",
+   "xp": 60,
+   "cond": {
+    "type": "era",
+    "value": 2
+   }
+  },
+  {
+   "id": "convertisseur",
+   "name": "Prosélyte",
+   "desc": "Des fidèles d'un autre peuple vous vénèrent (≥ 50).",
+   "xp": 40,
+   "cond": {
+    "type": "foreign_believers",
+    "value": 50
+   }
+  }
+ ],
+ "families": {
+  "terrain": "Terrain, relief et océans",
+  "climate": "Climat et saisons",
+  "vegetation": "Végétation et fertilité",
+  "life": "Création de la vie",
+  "evolution": "Influence sur l'évolution",
+  "affinity": "Attribution des affinités",
+  "healing": "Guérison et protection",
+  "blessing": "Bénédictions et malédictions",
+  "inspiration": "Inspirations et révélations",
+  "sign": "Manifestations religieuses",
+  "catastrophe": "Catastrophes, destruction et renaissance"
+ },
+ "powers": [
+  {
+   "id": "soulever",
+   "name": "Soulever la terre",
+   "family": "terrain",
+   "cost": 4,
+   "unlock": {
+    "level": 0
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "height",
+     "v": 0.22
+    }
+   ],
+   "delayed": [],
+   "visual": "dust_up",
+   "desc": "Élève le relief. Peut faire émerger des îles.",
+   "interactions": "Recalcule température (altitude), humidité, biome et ressources des cellules touchées ; peut rendre une cellule inhabitable ou ouvrir un passage."
+  },
+  {
+   "id": "creuser",
+   "name": "Creuser",
+   "family": "terrain",
+   "cost": 4,
+   "unlock": {
+    "level": 0
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "height",
+     "v": -0.22
+    }
+   ],
+   "delayed": [],
+   "visual": "dust_down",
+   "desc": "Abaisse le relief ; sous le niveau de la mer, crée des baies ou des lacs.",
+   "interactions": "Une cellule habitée submergée perd sa population (les survivants migrent). Les côtes créées favorisent les pêcheurs."
+  },
+  {
+   "id": "pluie",
+   "name": "Pluie bienfaisante",
+   "family": "climate",
+   "cost": 6,
+   "unlock": {
+    "level": 0
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "moisture",
+     "v": 0.2
+    }
+   ],
+   "delayed": [
+    {
+     "after": 2,
+     "t": "fertility",
+     "v": 0.08
+    }
+   ],
+   "visual": "rain",
+   "desc": "Humidifie durablement la région.",
+   "interactions": "Peut transformer désert en savane, savane en prairie ; la fertilité augmente 2 ans plus tard. Les fidèles témoins gagnent en ferveur."
+  },
+  {
+   "id": "souffle_chaud",
+   "name": "Souffle chaud",
+   "family": "climate",
+   "cost": 6,
+   "unlock": {
+    "level": 1
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "temperature",
+     "v": 0.08
+    }
+   ],
+   "delayed": [],
+   "visual": "heat",
+   "desc": "Réchauffe la région.",
+   "interactions": "Fait fondre glaces et toundras ; la sélection naturelle favorisera peu à peu la résistance à la chaleur."
+  },
+  {
+   "id": "souffle_glace",
+   "name": "Souffle glacé",
+   "family": "climate",
+   "cost": 6,
+   "unlock": {
+    "level": 1
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "temperature",
+     "v": -0.08
+    }
+   ],
+   "delayed": [],
+   "visual": "frost",
+   "desc": "Refroidit la région.",
+   "interactions": "Favorise à long terme les traits de résistance au froid ; réduit la fertilité des régions déjà froides."
+  },
+  {
+   "id": "floraison",
+   "name": "Floraison",
+   "family": "vegetation",
+   "cost": 8,
+   "unlock": {
+    "level": 1
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "fertility",
+     "v": 0.15
+    }
+   ],
+   "delayed": [
+    {
+     "after": 3,
+     "t": "resource",
+     "v": "wood"
+    }
+   ],
+   "visual": "bloom",
+   "desc": "Rend les sols fertiles ; une forêt pousse quelques années plus tard.",
+   "interactions": "Augmente la capacité d'accueil : la population grandit, puis la ressource bois apparaît."
+  },
+  {
+   "id": "semer_vie",
+   "name": "Semer la vie",
+   "family": "life",
+   "cost": 10,
+   "unlock": {
+    "level": 1
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "resource",
+     "v": "game"
+    }
+   ],
+   "delayed": [
+    {
+     "after": 5,
+     "t": "resource",
+     "v": "fish"
+    }
+   ],
+   "visual": "sparkles",
+   "desc": "Crée du gibier, puis des poissons dans les eaux voisines.",
+   "interactions": "Nourriture accrue ; favorise les traits de chasseur."
+  },
+  {
+   "id": "don_affinite",
+   "name": "Don d'affinité",
+   "family": "affinity",
+   "cost": 0,
+   "unlock": {
+    "level": 0
+   },
+   "radius": 0,
+   "target": "settlement",
+   "effects": [
+    {
+     "t": "grant_affinity",
+     "v": 5
+    }
+   ],
+   "delayed": [],
+   "visual": "halo",
+   "desc": "Confère Magie, Épée ou les deux à des habitants nés sans cette affinité. Coût = coût d'attribution × multiplicateur tardif, par personne.",
+   "interactions": "Seule voie d'obtention tardive d'une affinité. Ne donne aucune maîtrise : elle s'acquiert ensuite par l'apprentissage."
+  },
+  {
+   "id": "guerison",
+   "name": "Guérison",
+   "family": "healing",
+   "cost": 8,
+   "unlock": {
+    "level": 1
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "cleanse",
+     "v": [
+      "epidemie",
+      "famine",
+      "maudit"
+     ]
+    },
+    {
+     "t": "status",
+     "v": "protege",
+     "years": 10
+    },
+    {
+     "t": "fervor",
+     "v": 0.08
+    }
+   ],
+   "delayed": [],
+   "visual": "heal",
+   "desc": "Soigne et protège pendant 10 ans.",
+   "interactions": "Annule épidémie, famine et malédiction ; la ferveur des témoins augmente."
+  },
+  {
+   "id": "benediction",
+   "name": "Bénédiction",
+   "family": "blessing",
+   "cost": 10,
+   "unlock": {
+    "level": 2
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "status",
+     "v": "beni",
+     "years": 15
+    },
+    {
+     "t": "fervor",
+     "v": 0.1
+    }
+   ],
+   "delayed": [],
+   "visual": "blessing",
+   "desc": "Fertilité, nourriture et cohésion accrues pendant 15 ans.",
+   "interactions": "Peut rendre envieux les voisins d'autres religions (conversions vers vous)."
+  },
+  {
+   "id": "malediction",
+   "name": "Malédiction",
+   "family": "blessing",
+   "cost": 12,
+   "unlock": {
+    "level": 2
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "status",
+     "v": "maudit",
+     "years": 10
+    },
+    {
+     "t": "conversion",
+     "v": -0.05
+    }
+   ],
+   "delayed": [
+    {
+     "after": 3,
+     "t": "fervor",
+     "v": -0.1
+    }
+   ],
+   "visual": "curse",
+   "desc": "Affaiblit une région pendant 10 ans.",
+   "interactions": "Effet réduit de moitié sur les peuples insensibles à la magie. Vos propres fidèles touchés doutent de vous."
+  },
+  {
+   "id": "revelation",
+   "name": "Révélation",
+   "family": "inspiration",
+   "cost": 15,
+   "unlock": {
+    "level": 2
+   },
+   "radius": 0,
+   "target": "settlement",
+   "effects": [
+    {
+     "t": "research",
+     "v": 0.4
+    },
+    {
+     "t": "status",
+     "v": "inspire",
+     "years": 8
+    }
+   ],
+   "delayed": [
+    {
+     "after": 5,
+     "t": "fervor",
+     "v": 0.08
+    }
+   ],
+   "visual": "light_beam",
+   "desc": "Inspire une découverte (40 % du coût de la recherche en cours).",
+   "interactions": "Les conditions de la découverte (ressources, stabilité) restent nécessaires."
+  },
+  {
+   "id": "signe",
+   "name": "Signe céleste",
+   "family": "sign",
+   "cost": 5,
+   "unlock": {
+    "level": 0
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "fervor",
+     "v": 0.12
+    },
+    {
+     "t": "conversion",
+     "v": 0.06
+    },
+    {
+     "t": "memory",
+     "v": 0.1
+    }
+   ],
+   "delayed": [],
+   "visual": "aurora",
+   "desc": "Une aurore surnaturelle : ferveur et conversions.",
+   "interactions": "Les peuples dotés du trait « Sens des présages » réagissent davantage."
+  },
+  {
+   "id": "murmure",
+   "name": "Murmure",
+   "family": "sign",
+   "cost": 2,
+   "unlock": {
+    "level": 0
+   },
+   "radius": 0,
+   "target": "settlement",
+   "always_available": true,
+   "effects": [
+    {
+     "t": "conversion",
+     "v": 0.03
+    },
+    {
+     "t": "memory",
+     "v": 0.15
+    }
+   ],
+   "delayed": [],
+   "visual": "whisper",
+   "desc": "Une voix dans les rêves. Pouvoir de dernier recours, utilisable même sans fidèles.",
+   "interactions": "Plus efficace là où subsiste la mémoire de votre culte."
+  },
+  {
+   "id": "seisme",
+   "name": "Séisme",
+   "family": "catastrophe",
+   "cost": 20,
+   "unlock": {
+    "level": 3
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "height",
+     "v": 0.12,
+     "noise": true
+    },
+    {
+     "t": "pop",
+     "v": -0.15
+    },
+    {
+     "t": "status",
+     "v": "traumatise",
+     "years": 6
+    }
+   ],
+   "delayed": [
+    {
+     "after": 4,
+     "t": "resource",
+     "v": "ore"
+    }
+   ],
+   "visual": "quake",
+   "desc": "Secoue la région : morts et destructions, puis des filons de minerai apparaissent.",
+   "interactions": "Peut provoquer une régression technique par perte de stabilité."
+  },
+  {
+   "id": "deluge",
+   "name": "Déluge",
+   "family": "catastrophe",
+   "cost": 25,
+   "unlock": {
+    "level": 4
+   },
+   "radius": 2,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "moisture",
+     "v": 0.35
+    },
+    {
+     "t": "height",
+     "v": -0.08
+    },
+    {
+     "t": "pop",
+     "v": -0.2
+    },
+    {
+     "t": "status",
+     "v": "traumatise",
+     "years": 6
+    }
+   ],
+   "delayed": [
+    {
+     "after": 6,
+     "t": "fertility",
+     "v": 0.2
+    }
+   ],
+   "visual": "flood",
+   "desc": "Inonde la région ; les terres limoneuses deviennent très fertiles ensuite.",
+   "interactions": "Destruction puis renaissance agricole."
+  },
+  {
+   "id": "renaissance",
+   "name": "Renaissance",
+   "family": "catastrophe",
+   "cost": 18,
+   "unlock": {
+    "level": 3
+   },
+   "radius": 1,
+   "target": "cell",
+   "effects": [
+    {
+     "t": "fertility",
+     "v": 0.25
+    },
+    {
+     "t": "cleanse",
+     "v": [
+      "traumatise",
+      "maudit",
+      "famine"
+     ]
+    }
+   ],
+   "delayed": [
+    {
+     "after": 3,
+     "t": "status",
+     "v": "beni",
+     "years": 10
+    }
+   ],
+   "visual": "rebirth",
+   "desc": "Fait renaître une terre dévastée.",
+   "interactions": "Idéal après une catastrophe."
+  },
+  {
+   "id": "eveil_adaptatif",
+   "name": "Éveil adaptatif",
+   "family": "evolution",
+   "cost": 14,
+   "unlock": {
+    "level": 3
+   },
+   "radius": 0,
+   "target": "settlement",
+   "effects": [
+    {
+     "t": "evolve",
+     "v": 0.15
+    }
+   ],
+   "delayed": [],
+   "visual": "dna",
+   "desc": "Accélère fortement la sélection naturelle : l'équivalent de 4 générations de sélection par le milieu.",
+   "interactions": "N'agit que sur les traits héréditaires ; ne crée jamais d'affinité."
+  }
+ ]
+}
