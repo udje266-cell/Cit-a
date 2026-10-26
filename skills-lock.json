@@ -19,6 +19,12 @@
       "skillPath": "skills/disciplines/camera-systems/SKILL.md",
       "computedHash": "9d5ae7ff7f72ed682dd0da6718af55b8415f0f4dab775803a30f09cf0077d4af"
     },
+    "game-builder": {
+      "source": "ericzakariasson/skills",
+      "sourceType": "github",
+      "skillPath": "skills/game-builder/SKILL.md",
+      "computedHash": "97de58a68687cf1395c79f6957a80dfa9961c69a6c6b72774cc65497f6898c75"
+    },
     "game-ui-ux": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "sourceType": "github",
