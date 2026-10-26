@@ -33,6 +33,12 @@ bannières, habitants représentatifs, halo, 3 niveaux de détail, grille en mod
 (zone de sécurité, barre d'état, vitesse, rail, tiroir de pouvoirs, explications). Prévu : effets visuels propres
 à chaque pouvoir, routes et ports, animation des habitants, variantes d'arbres par saison.
 
+## Jalon 1b — Direction artistique et interface (✅ PC en rendu logiciel, 🟡 Android)
+Terrain doux en terrasses, palette limitée, végétation composée, famille architecturale, villages aménagés,
+lumière douce, halo, 3 niveaux de détail, interface mobile refaite (voir ART_DIRECTION.md, D27–D34).
+Prévu : contremarches plus nettes, effets visuels des pouvoirs, routes entre villages, ports, animation des
+habitants, construction initiale multi-fils.
+
 ## Jalon 2 — Vérification et réglages (⬜ prochaine étape)
 1. ✅ Tests lancés et corrigés ; parcours complet vérifié sur PC.
 2. Réduire le coût d'un tick (8,5 ms sur PC, cible ≤ 4 ms sur mobile).

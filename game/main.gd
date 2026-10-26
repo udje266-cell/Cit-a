@@ -49,24 +49,26 @@ func _ready() -> void:
 	e.background_mode = Environment.BG_COLOR
 	e.background_color = Color(0.025, 0.03, 0.06)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.55, 0.62, 0.8)
-	e.ambient_light_energy = 0.38
+	e.ambient_light_color = Color(0.68, 0.75, 0.88)
+	e.ambient_light_energy = 0.55
 	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	e.tonemap_white = 4.0
-	e.tonemap_exposure = 0.95
+	e.tonemap_white = 5.0
+	e.tonemap_exposure = 1.0
 	env.environment = e
 	add_child(env)
 	rig = CameraRig.new()
 	add_child(rig)
 	# Soleil attaché à la caméra : la face observée est toujours éclairée, de biais (lecture des volumes).
 	sun = DirectionalLight3D.new()
-	sun.light_energy = 1.05
-	sun.light_color = Color(1.0, 0.96, 0.88)
+	sun.light_energy = 0.95
+	sun.light_color = Color(1.0, 0.95, 0.86)
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	sun.directional_shadow_max_distance = 2.5
-	sun.shadow_bias = 0.02
-	sun.rotation = Vector3(-0.55, -0.75, 0.0)
+	sun.shadow_bias = 0.015
+	sun.shadow_normal_bias = 1.5
+	sun.shadow_blur = 1.6
+	sun.rotation = Vector3(-0.62, -0.95, 0.0)
 	rig.camera.add_child(sun)
 	rig.tapped.connect(_on_tap)
 	rig.painted.connect(_on_paint)

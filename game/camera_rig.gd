@@ -17,6 +17,7 @@ var yaw := 0.4
 var pitch := 0.35
 var distance := 3.2
 var paint_mode := false
+var heading := 0.0                 # cap de la vue rapprochée (radians)
 var user_moved := false            # vrai dès que le joueur a tourné ou zoomé lui-même
 var ui_blocker: Callable           # (Vector2) -> bool : le point est-il sur l'interface ?
 
@@ -50,8 +51,11 @@ func _apply() -> void:
 	var target := dir * clampf(nf * 3.0, 0.0, 1.02)
 	var tilt := nf * 0.85
 	var height := distance - target.length()
-	camera.position = target + (dir * cos(tilt) - north * sin(tilt)) * height
-	camera.look_at(target, north if nf > 0.01 else Vector3.UP)
+	# Cap : direction depuis laquelle on regarde la région (rotation autour de la verticale locale).
+	var east := north.cross(dir).normalized()
+	var fwd := (north * cos(heading) + east * sin(heading)).normalized()
+	camera.position = target + (dir * cos(tilt) - fwd * sin(tilt)) * height
+	camera.look_at(target, fwd if nf > 0.01 else Vector3.UP)
 	moved.emit()
 
 ## 0 de loin, 1 au plus près.

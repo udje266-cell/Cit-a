@@ -18,6 +18,8 @@ Commandes tactiles : glisser = tourner, pincer = zoom, toucher = sélectionner, 
 godot --headless --path . --import                       # première fois : importe le projet
 godot --headless --path . -s tests/run_tests.gd          # code de sortie 0 = succès
 godot --headless --path . -s tests/smoke_game.gd         # flux complet de l'interface
+xvfb-run godot --path . --rendering-method gl_compatibility -s tests/art_showcase.gd -- <dossier>  # vitrine DA
+xvfb-run godot --path . --rendering-method gl_compatibility -s tests/perf_view.gd                  # mesures rendu
 xvfb-run godot --path . --rendering-method gl_compatibility -s tests/screenshot.gd -- <dossier>   # captures
 ```
 29 tests couvrent : catalogues, déterminisme et structure de la planète, héritage, sélection, mutations,
@@ -77,6 +79,28 @@ Les temps d'image ci-dessous sont donc ceux d'un rendu **logiciel** et ne préju
 
 À vérifier sur Android : 60 i/s à distance moyenne (151 k primitives, ~200 appels) ; si nécessaire, réduire la
 densité de végétation (`_build_props`, 14 essais par triangle) ou fusionner les variantes d'arbres.
+
+## Vérifications de la refonte visuelle (0.2.0)
+Environnement réellement testé : **Linux x86-64 (conteneur cloud, 4 cœurs), Godot 4.4.1, rendu Compatibilité
+(OpenGL) en logiciel via Mesa llvmpipe sous Xvfb, 1280×720**. Aucun GPU, aucun téléphone, aucun émulateur :
+les temps d'image ci-dessous sont ceux d'un rendu **logiciel** et ne préjugent pas d'un appareil Android.
+
+| Vérification | Résultat |
+|---|---|
+| Tests de simulation | ✅ 29/29, 343 assertions (simulation inchangée) |
+| Test de fumée (flux complet, 3 distances, 10 cartes, nouvelles fenêtres) | ✅ sans erreur |
+| Vitrine de la région (baie, colline en terrasses, forêt, falaise, village), interface masquée | ✅ `tests/art_showcase.gd` : vues globale, régionale, rapprochée ×2 |
+| Raccords du terrain | ✅ par construction (sommets uniques partagés) |
+| Orientation des objets | ✅ verticale = normale de la sphère ; bâtiments tournés vers la place |
+| Construction initiale du monde visuel | ≈ 3,4 s (une fois, au chargement) — **à réduire** (fils de calcul) |
+| Modification locale du terrain | ≈ 160–180 ms |
+| Primitives par image (ombres comprises) | loin 137 k · régional 345 k · près 443 k |
+| Appels de dessin (interface 2D comprise) | loin 108 · régional 220 · près 232 |
+| Sommets du terrain / mémoire | 92 162 ; mémoire statique 78 Mo ; vidéo 30 Mo |
+
+À vérifier en priorité sur Android : temps d'image aux distances régionale et rapprochée. Leviers prévus si
+nécessaire : densité forestière (`_build_chunk_props`), ombres des arbres, imposteurs pour les forêts lointaines,
+construction initiale répartie sur plusieurs fils.
 
 ## Outils de l'environnement de développement (inspectés le 2026-10-26)
 | Élément | État |

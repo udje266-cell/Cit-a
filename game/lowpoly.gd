@@ -13,6 +13,43 @@ func tri(a: Vector3, b: Vector3, c: Vector3, col: Color) -> void:
 	normals.append(n); normals.append(n); normals.append(n)
 	colors.append(col); colors.append(col); colors.append(col)
 
+## Triangle à normales par sommet (rendu lissé).
+func tri_n(a: Vector3, b: Vector3, c: Vector3, na: Vector3, nb: Vector3, nc: Vector3, col: Color) -> void:
+	verts.append(a); verts.append(c); verts.append(b)
+	normals.append(na); normals.append(nc); normals.append(nb)
+	colors.append(col); colors.append(col); colors.append(col)
+
+## Cône ou tronc lissé (feuillages, troncs) : normales calculées sur la pente.
+func smooth_prism(t: Transform3D, bottom_r: float, top_r: float, h: float, seg: int, col: Color, top_col: Color = Color(0, 0, 0, 0)) -> void:
+	var nb := t.basis.inverse().transposed()
+	var tc := col if top_col.a == 0.0 else top_col
+	for i in seg:
+		var a0 := TAU * i / seg
+		var a1 := TAU * (i + 1) / seg
+		var n0 := (nb * Vector3(cos(a0) * h, bottom_r - top_r, sin(a0) * h)).normalized()
+		var n1 := (nb * Vector3(cos(a1) * h, bottom_r - top_r, sin(a1) * h)).normalized()
+		var b0 := t * Vector3(cos(a0) * bottom_r, 0, sin(a0) * bottom_r)
+		var b1 := t * Vector3(cos(a1) * bottom_r, 0, sin(a1) * bottom_r)
+		var t0 := t * Vector3(cos(a0) * top_r, h, sin(a0) * top_r)
+		var t1 := t * Vector3(cos(a1) * top_r, h, sin(a1) * top_r)
+		if top_r <= 0.0001:
+			var nt := (n0 + n1).normalized()
+			tri_n(b0, t0, b1, n0, nt, n1, col)
+		else:
+			tri_n(b0, t0, t1, n0, n0, n1, col)
+			tri_n(b0, t1, b1, n0, n1, n1, col)
+			var up := (nb * Vector3.UP).normalized()
+			tri_n(t * Vector3(0, h, 0), t1, t0, up, up, up, tc)
+
+## Volume arrondi lissé (canopées, rochers, buissons).
+func smooth_blob(t: Transform3D, col: Color, detail: int = 1, jitter: float = 0.0, rng: RandomNumberGenerator = null) -> void:
+	var start := verts.size()
+	blob(t, col, detail, jitter, rng, false)
+	var nb := t.basis.inverse().transposed()
+	var inv := t.affine_inverse()
+	for i in range(start, verts.size()):
+		normals[i] = (nb * (inv * verts[i])).normalized()
+
 func quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color) -> void:
 	tri(a, b, c, col)
 	tri(a, c, d, col)
@@ -68,7 +105,7 @@ func gable(t: Transform3D, size: Vector3, col: Color) -> void:
 	tri(b, r1, c, col.darkened(0.2))
 
 ## Sphère low poly (icosaèdre éventuellement subdivisé une fois), déformable par l'échelle de t.
-func blob(t: Transform3D, col: Color, detail: int = 0, jitter: float = 0.0, rng: RandomNumberGenerator = null) -> void:
+func blob(t: Transform3D, col: Color, detail: int = 0, jitter: float = 0.0, rng: RandomNumberGenerator = null, shade_faces: bool = true) -> void:
 	var g := (1.0 + sqrt(5.0)) / 2.0
 	var v: Array = [Vector3(-1, g, 0), Vector3(1, g, 0), Vector3(-1, -g, 0), Vector3(1, -g, 0), Vector3(0, -1, g), Vector3(0, 1, g),
 		Vector3(0, -1, -g), Vector3(0, 1, -g), Vector3(g, 0, -1), Vector3(g, 0, 1), Vector3(-g, 0, -1), Vector3(-g, 0, 1)]
@@ -98,7 +135,7 @@ func blob(t: Transform3D, col: Color, detail: int = 0, jitter: float = 0.0, rng:
 		var a2: Vector3 = t * v[face[0]]
 		var b2: Vector3 = t * v[face[1]]
 		var c2: Vector3 = t * v[face[2]]
-		var shade := 1.0 - 0.06 * float((face[0] + face[1]) % 3)
+		var shade := 1.0 - 0.06 * float((face[0] + face[1]) % 3) if shade_faces else 1.0
 		tri(a2, b2, c2, Color(col.r * shade, col.g * shade, col.b * shade, col.a))
 
 func to_mesh() -> ArrayMesh:
