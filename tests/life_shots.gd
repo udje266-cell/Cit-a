@@ -60,4 +60,28 @@ func _run() -> void:
 	print("habitants ", main.view.life.walker_count(), " convois ", main.view.life.convoy_count())
 	await create_timer(5.0).timeout
 	print("convois après arrivée ", main.view.life.convoy_count())
+	# Noms des villages : pas de chevauchement à l'écran, regroupement « +N ».
+	main.rig.focus_on(w.planet.pos[int(best.cell)], 2.4)
+	main.view.set_names(true)
+	await _frames(30)
+	main.view.declutter_labels()
+	await _frames(3)
+	var cam := root.get_viewport().get_camera_3d()
+	var rects := []
+	var grouped := 0
+	for id in main.view._labels:
+		var lb: Label3D = main.view._labels[id]
+		if lb.visible:
+			var p2: Vector2 = cam.unproject_position(lb.position)
+			var wd: float = str(lb.get_meta("base")).length() * lb.font_size * 0.5 + 16.0
+			rects.append(Rect2(p2 - Vector2(wd * 0.5, 18.0), Vector2(wd, 36.0)))
+			if lb.text.find("+") >= 0:
+				grouped += 1
+	var overlap := 0
+	for i in rects.size():
+		for j in range(i + 1, rects.size()):
+			if rects[i].intersects(rects[j]):
+				overlap += 1
+	print("noms : %d étiquettes, %d visibles, %d regroupements, %d chevauchements" % [main.view._labels.size(), rects.size(), grouped, overlap])
+	root.get_viewport().get_texture().get_image().save_png(out + "/noms_regroupes.png")
 	quit()

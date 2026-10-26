@@ -1298,10 +1298,13 @@ func _update_labels() -> void:
 				lb.font_size = 26
 				lb.outline_size = 8
 				lb.outline_modulate = Color(0, 0, 0, 0.85)
-				lb.no_depth_test = false
+				lb.no_depth_test = true   # face cachée et horizon filtrés par declutter_labels()
 				add_child(lb)
 				_labels[int(vi.id)] = lb
-			lb.text = "%s · %d" % [s.name, int(s.pop)]
+			lb.set_meta("base", "%s · %d" % [s.name, int(s.pop)])
+			lb.set_meta("prio", float(s.pop))
+			if lb.text == "":
+				lb.text = lb.get_meta("base")
 			lb.modulate = Color(p.color[0], p.color[1], p.color[2]).lightened(0.35)
 			var c: Vector3 = vi.center
 			lb.position = c * (surface_radius(c, int(vi.cell)) + 0.035)
@@ -1379,7 +1382,62 @@ func pulse(cells: Array, color: Color) -> void:
 	highlight(cells, color)
 	_pulse_left = 1.6
 
+## Noms qui se chevauchent à l'écran : on garde le plus peuplé, qui annonce « +N » villages masqués autour.
+func declutter_labels() -> void:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null or _labels.is_empty():
+		return
+	var items := []
+	for id in _labels:
+		var lb: Label3D = _labels[id]
+		var front: bool = lb.position.normalized().dot(_cam_dir) > 0.6 and not cam.is_position_behind(lb.position)
+		if not front:
+			lb.visible = false
+			continue
+		var sp: Vector2 = cam.unproject_position(lb.position)
+		if ui_blocker.is_valid() and ui_blocker.call(sp):
+			lb.visible = false
+			continue
+		items.append([float(lb.get_meta("prio", 0.0)), lb, sp])
+	items.sort_custom(func(a, b): return a[0] > b[0])
+	var kept := []   # [rect, label, hidden count]
+	for it in items:
+		var lb2: Label3D = it[1]
+		var base: String = lb2.get_meta("base", lb2.text)
+		var w := base.length() * lb2.font_size * 0.5 + 16.0
+		var r := Rect2(it[2] - Vector2(w * 0.5, 18.0), Vector2(w, 36.0))
+		var hit := -1
+		for k in kept.size():
+			if (kept[k][0] as Rect2).intersects(r):
+				hit = k
+				break
+		if hit >= 0:
+			lb2.visible = false
+			kept[hit][2] = int(kept[hit][2]) + 1
+		else:
+			lb2.visible = true
+			kept.append([r, lb2, 0])
+	for k in kept:
+		var lb3: Label3D = k[1]
+		var base3: String = lb3.get_meta("base", lb3.text)
+		lb3.text = base3 if int(k[2]) == 0 else "%s  +%d" % [base3, int(k[2])]
+
+func labels_visible() -> int:
+	var n := 0
+	for id in _labels:
+		if _labels[id].visible:
+			n += 1
+	return n
+
+var _declutter_acc := 0.0
+var ui_blocker: Callable      # (Vector2) -> bool : point couvert par l'interface
+
 func _process(delta: float) -> void:
+	if show_names:
+		_declutter_acc += delta
+		if _declutter_acc >= 0.15:
+			_declutter_acc = 0.0
+			declutter_labels()
 	if _pulse_left > 0.0:
 		_pulse_left -= delta
 		if highlight_instance.mesh != null:

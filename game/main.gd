@@ -84,6 +84,7 @@ func _ready() -> void:
 	layer.add_child(ui)
 	ui.build(self)
 	rig.ui_blocker = ui.blocks
+	view.ui_blocker = ui.blocks
 	_show_menu()
 
 # ------------------------------------------------------------------ Menus et création
