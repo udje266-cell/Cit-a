@@ -7,6 +7,12 @@
       "skillPath": "blender-cli/SKILL.md",
       "computedHash": "0dfd6c4c0553936146c67096d0221c31592bbe514e18198dbf76a091e6600a44"
     },
+    "blender-image-to-3d": {
+      "source": "majidmanzarpour/blender-game-skills",
+      "sourceType": "github",
+      "skillPath": "skills/blender-image-to-3d/SKILL.md",
+      "computedHash": "8f59d1d73d4bc3f33fd2d43b458691b99faea25395ae0ebc9c91f66e69fc3162"
+    },
     "camera-systems": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "sourceType": "github",
