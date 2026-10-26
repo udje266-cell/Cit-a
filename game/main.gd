@@ -9,6 +9,7 @@ const CameraRig = preload("res://game/camera_rig.gd")
 const PlanetView = preload("res://game/planet_view.gd")
 const UI = preload("res://game/ui.gd")
 const FounderScreen = preload("res://game/founder_screen.gd")
+const Audio = preload("res://game/audio.gd")
 
 const TUTORIAL := [
 	"Tournez la planète : glissez un doigt (ou le bouton gauche de la souris). Zoomez : pincez (ou molette).",
@@ -26,6 +27,7 @@ var speed := 1
 var rig
 var sun: DirectionalLight3D
 var view
+var audio
 var ui
 var founder_screen
 var _acc := 0.0
@@ -74,6 +76,8 @@ func _ready() -> void:
 	rig.painted.connect(_on_paint)
 	view = PlanetView.new()
 	add_child(view)
+	audio = Audio.new()
+	add_child(audio)
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	ui = UI.new()
@@ -235,6 +239,15 @@ func _process(delta: float) -> void:
 		_hud_acc = 0.0
 		ui.refresh_hud(speed)
 		_update_tutorial()
+		# Musique : tension quand un peuple fidèle au joueur est en guerre.
+		var war := false
+		for p in world.peoples:
+			if int(p.deity) == world.player_deity and not p.extinct and world.people_at_war(int(p.id)):
+				war = true
+				break
+		if war and audio.mood == "paix" and audio.loops_ready():
+			audio.play("war")
+		audio.set_mood("tension" if war else "paix")
 	_mesh_acc += delta
 	update_lod()
 	if _mesh_acc >= 1.0 or world.planet.version != view._built_version:
@@ -335,6 +348,7 @@ func confirm_power() -> void:
 		view.refresh(true)
 		view.pulse(cells, Color(1.0, 0.85, 0.35, 0.5))
 		view.play_fx(str(cat.powers[pid].get("visual", "sparkles")), cells)
+		audio.play_power(str(cat.powers[pid].family))
 		ui.mark_dirty()
 		ui.refresh_hud(speed)
 		ui.show_toast("%s — énergie %.1f → %.1f (−%.1f)\n%s" % [r.msg, e0, float(d.energy), e0 - float(d.energy), _effect_diff(before, _effect_snapshot(cells), pid)])
@@ -344,6 +358,7 @@ func confirm_power() -> void:
 			ui.show_cell(int(hit[0].cell))
 	else:
 		ui.show_toast("Impossible : " + str(r.msg), Color(1.0, 0.6, 0.45))
+		audio.play("error")
 
 ## Valeurs observables de la zone (pour montrer l'effet réel d'un pouvoir).
 func _effect_snapshot(cells: Array) -> Dictionary:

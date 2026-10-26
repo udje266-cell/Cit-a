@@ -137,6 +137,7 @@ func _button(text: String, cb: Callable, min_w: float = 0.0) -> Button:
 	b.text = text
 	b.custom_minimum_size = Vector2(min_w, 52)
 	b.pressed.connect(cb)
+	b.pressed.connect(_click_sound)
 	return b
 
 func _icon_button(icon: String, tip: String, cb: Callable, size: float = 52.0) -> Button:
@@ -147,7 +148,12 @@ func _icon_button(icon: String, tip: String, cb: Callable, size: float = 52.0) -
 	b.custom_minimum_size = Vector2(size, size)
 	b.tooltip_text = tip
 	b.pressed.connect(cb)
+	b.pressed.connect(_click_sound)
 	return b
+
+func _click_sound() -> void:
+	if main != null and main.audio != null:
+		main.audio.play("tap")
 
 ## Le point écran est-il sur un élément d'interface visible ? (évite de tourner la planète en touchant un panneau)
 func blocks(pos: Vector2) -> bool:
@@ -1089,6 +1095,35 @@ func show_game_menu() -> void:
 	share.custom_minimum_size.y = 52
 	body.add_child(share)
 	body.add_child(_rich("[i]Le partage en ligne nécessite un service d'hébergement qui n'est pas encore configuré (voir docs/ARCHITECTURE.md). L'export local produit un fichier .cworld partageable manuellement.[/i]"))
+	body.add_child(_rich("[b]Son[/b] (musique et effets générés par le jeu)"))
+	for item in [["Musique", "music_db"], ["Effets", "sfx_db"]]:
+		var row := HBoxContainer.new()
+		var lab := Label.new()
+		lab.text = item[0]
+		lab.custom_minimum_size.x = 110
+		row.add_child(lab)
+		var sl := HSlider.new()
+		sl.min_value = -40.0
+		sl.max_value = 6.0
+		sl.step = 1.0
+		sl.value = float(main.audio.get(item[1]))
+		sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sl.custom_minimum_size.y = 40
+		var key: String = item[1]
+		sl.value_changed.connect(func(v):
+			main.audio.set(key, v)
+			main.audio.save_settings()
+			if key == "sfx_db":
+				main.audio.play("tap"))
+		row.add_child(sl)
+		body.add_child(row)
+	var mute := CheckButton.new()
+	mute.text = "Couper le son"
+	mute.button_pressed = main.audio.muted
+	mute.toggled.connect(func(on):
+		main.audio.muted = on
+		main.audio.save_settings())
+	body.add_child(mute)
 	body.add_child(_button("Revoir le tutoriel", func():
 		close_modal()
 		main.tutorial_restart()))

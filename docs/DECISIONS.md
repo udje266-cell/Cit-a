@@ -116,3 +116,14 @@ Purement visuel : la simulation n'en dépend pas (seul ajout : le champ `from` d
   cheminées ; magique → tour de mage puis cristaux flottants ; hybride → observatoire.
 - Captures : `docs/captures/vie_region.png`, `vie_village.png` (`tests/life_shots.gd`).
 - Limite : les colons partent et arrivent la même année dans la simulation ; le convoi n'en est qu'une illustration.
+
+## D45 — Son et musique procéduraux (`game/audio.gd`)
+- Aucun fichier audio : tout est synthétisé (sinusoïdes, partiels de cloche, bruit filtré, enveloppes), 22 050 Hz mono.
+- 9 effets : clic d'interface, ouverture, erreur, et un son par famille de pouvoirs (grondement pour terrain et
+  catastrophes, souffle pour le climat, arpège pour la vie et la végétation, cloche pour bénédictions, soins et signes,
+  scintillement pour affinités et évolution) ; tambour quand un peuple fidèle entre en guerre.
+- Musique : deux boucles de 24 s (paix : pentatonique majeure ; tension : mineure, plus lente), calculées dans un fil
+  secondaire au démarrage (≈ 0,6 s sur PC), enchaînées en fondu de 3 s selon la guerre.
+- Bus « Musique » et « Effets », volumes et coupure dans le menu, mémorisés dans `user://settings.cfg`.
+- Écoute hors du jeu : `tools/export_audio.gd` écrit les fichiers WAV. **Non vérifié à l'oreille par l'auteur** :
+  seuls l'amplitude, l'absence de saturation et la durée sont testés.
