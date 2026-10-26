@@ -39,6 +39,7 @@ const RES_COLORS := {"mana": Color(0.7, 0.35, 0.95), "ore": Color(0.8, 0.35, 0.2
 
 # ---- Formes
 const DETAIL := 6               # subdivisions par arête d'un triangle de simulation
+const FACET := 2               # la terre est dessinée sur un sommet sur FACET : grands plans anguleux
 const STEP := 0.06             # hauteur d'une terrasse (unités de simulation)
 const LAND_SCALE := 0.11
 const SEA_SCALE := 0.05
@@ -78,6 +79,7 @@ var g_nrm := PackedVector3Array()
 var g_base := PackedColorArray()
 var g_adj: Array = []
 var _chunk_faces: Array = []     # chunk -> PackedInt32Array (3 indices globaux par face, ordre Godot)
+var _chunk_facets: Array = []    # chunk -> faces de la grille grossière (dessin de la terre)
 var _chunk_verts: Array = []     # chunk -> PackedInt32Array
 var _chunk_nbrs: Array = []      # chunk -> Array de chunks voisins
 
@@ -251,6 +253,7 @@ func _build_topology() -> void:
 	g_dir = PackedVector3Array()
 	var adj: Array = []
 	_chunk_faces = []
+	_chunk_facets = []
 	_chunk_verts = []
 	var n := DETAIL
 	var vchunks: Array = []
@@ -270,6 +273,17 @@ func _build_topology() -> void:
 			for v in ids.values():
 				vset[v] = true
 		_chunk_faces.append(faces)
+		# Faces grossières : mêmes sommets partagés, pas FACET.
+		var coarse := PackedInt32Array()
+		var m := n / FACET
+		var dummy := []
+		for t in range(k * _chunk_div, (k + 1) * _chunk_div):
+			for i in m:
+				for j in m - i:
+					_face(coarse, _gid[_key(t, i * FACET, j * FACET)], _gid[_key(t, (i + 1) * FACET, j * FACET)], _gid[_key(t, i * FACET, (j + 1) * FACET)], adj)
+					if j < m - i - 1:
+						_face(coarse, _gid[_key(t, (i + 1) * FACET, j * FACET)], _gid[_key(t, (i + 1) * FACET, (j + 1) * FACET)], _gid[_key(t, i * FACET, (j + 1) * FACET)], adj)
+		_chunk_facets.append(coarse)
 		_chunk_verts.append(PackedInt32Array(vset.keys()))
 		for v in vset:
 			if not k in vchunks[v]:
@@ -376,7 +390,7 @@ func _raw(v: int) -> float:
 	var m := smoothstep(0.3, 0.65, h)
 	if m > 0.0:
 		var ridge := 1.0 - absf(_noise_ridge.get_noise_3dv(dir))
-		h += m * ridge * ridge * 0.45
+		h += m * ridge * ridge * ridge * 0.7   # arêtes franches, sommets marqués
 	return h
 
 ## Terrasses : plateaux plats reliés par des contremarches courtes et lisses.
@@ -413,13 +427,13 @@ func _rebuild_chunks(dirty: Dictionary) -> Dictionary:
 		var nbs: PackedInt32Array = g_adj[v]
 		for nb in nbs:
 			acc += g_raw[nb]
-		g_s1[v] = g_raw[v] * 0.35 + acc / maxf(nbs.size(), 1) * 0.65
+		g_s1[v] = g_raw[v] * 0.55 + acc / maxf(nbs.size(), 1) * 0.45
 	for v in verts:
 		var acc2 := 0.0
 		var nbs2: PackedInt32Array = g_adj[v]
 		for nb in nbs2:
 			acc2 += g_s1[nb]
-		g_s[v] = g_s1[v] * 0.4 + acc2 / maxf(nbs2.size(), 1) * 0.6
+		g_s[v] = g_s1[v] * 0.7 + acc2 / maxf(nbs2.size(), 1) * 0.3
 	# Villages proches de ces chunks.
 	var near := {}
 	for k in dirty:
@@ -450,7 +464,7 @@ func _rebuild_chunks(dirty: Dictionary) -> Dictionary:
 		var nb3: PackedInt32Array = g_adj[v]
 		for nb in nb3:
 			acc3 += g_h[nb]
-		h2[v] = g_h[v] * 0.5 + acc3 / maxf(nb3.size(), 1) * 0.5
+		h2[v] = g_h[v] * 0.75 + acc3 / maxf(nb3.size(), 1) * 0.25
 	for v in h2:
 		g_h[v] = h2[v]
 	for v in verts:
@@ -604,11 +618,11 @@ func _dominant_cell(v: int) -> int:
 
 func _upload_group(g: int) -> void:
 	var per := _group_div / _chunk_div
-	var local := {}
+	# Terre : facettes franches (normale par face) mais couleurs par sommet continues → pas de mosaïque.
 	var lv := PackedVector3Array()
 	var ln := PackedVector3Array()
 	var lc := PackedColorArray()
-	var idx := PackedInt32Array()
+	# Eau : surface douce (normales lissées, indexée) pour contraster avec les terres.
 	var olocal := {}
 	var ov := PackedVector3Array()
 	var on := PackedVector3Array()
@@ -616,23 +630,26 @@ func _upload_group(g: int) -> void:
 	var oidx := PackedInt32Array()
 	var tint := overlay not in ["terrain", "grid"] and _cell_overlay.size() > 0
 	for k in range(g * per, (g + 1) * per):
+		var cf: PackedInt32Array = _chunk_facets[k]
+		for f in range(0, cf.size(), 3):
+			var a := cf[f]
+			var b := cf[f + 1]
+			var c := cf[f + 2]
+			if g_h[a] > -0.06 or g_h[b] > -0.06 or g_h[c] > -0.06:
+				var fn := (g_pos[c] - g_pos[a]).cross(g_pos[b] - g_pos[a]).normalized()
+				for v in [a, b, c]:
+					lv.append(g_pos[v])
+					ln.append(fn)
+					var col := g_base[v]
+					if tint:
+						var oc2: Color = _cell_overlay[_dominant_cell(v)]
+						col = col.lerp(Color(oc2.r, oc2.g, oc2.b), 0.6 * oc2.a) if oc2.a > 0.0 else col.lerp(Color(0.55, 0.55, 0.55), 0.45)
+					lc.append(col)
 		var faces: PackedInt32Array = _chunk_faces[k]
 		for f in range(0, faces.size(), 3):
 			var a := faces[f]
 			var b := faces[f + 1]
 			var c := faces[f + 2]
-			if g_h[a] > -0.06 or g_h[b] > -0.06 or g_h[c] > -0.06:
-				for v in [a, b, c]:
-					if not local.has(v):
-						local[v] = lv.size()
-						lv.append(g_pos[v])
-						ln.append(g_nrm[v])
-						var col := g_base[v]
-						if tint:
-							var oc2: Color = _cell_overlay[_dominant_cell(v)]
-							col = col.lerp(Color(oc2.r, oc2.g, oc2.b), 0.6 * oc2.a) if oc2.a > 0.0 else col.lerp(Color(0.55, 0.55, 0.55), 0.45)
-						lc.append(col)
-					idx.append(local[v])
 			if g_s[a] < 0.04 or g_s[b] < 0.04 or g_s[c] < 0.04:
 				for v in [a, b, c]:
 					if not olocal.has(v):
@@ -641,8 +658,19 @@ func _upload_group(g: int) -> void:
 						on.append(g_dir[v])
 						oc.append(_water_color(v))
 					oidx.append(olocal[v])
-	_chunk_nodes[g].mesh = _mesh(lv, ln, lc, idx)
+	_chunk_nodes[g].mesh = _mesh_flat(lv, ln, lc)
 	_ocean_nodes[g].mesh = _mesh(ov, on, oc, oidx)
+
+static func _mesh_flat(v: PackedVector3Array, n: PackedVector3Array, c: PackedColorArray) -> ArrayMesh:
+	var m := ArrayMesh.new()
+	if v.size() > 0:
+		var arr := []
+		arr.resize(Mesh.ARRAY_MAX)
+		arr[Mesh.ARRAY_VERTEX] = v
+		arr[Mesh.ARRAY_NORMAL] = n
+		arr[Mesh.ARRAY_COLOR] = c
+		m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	return m
 
 func _water_color(v: int) -> Color:
 	var d := clampf(-g_s[v], 0.0, 1.0)
@@ -669,7 +697,7 @@ static func _mesh(v: PackedVector3Array, n: PackedVector3Array, c: PackedColorAr
 
 ## Rayon et normale de la surface au point (t, poids barycentriques).
 func sample(t: int, w: Vector3) -> Array:
-	var n := DETAIL
+	var n := DETAIL / FACET
 	var x := w.y * n
 	var y := w.z * n
 	var i := clampi(int(floor(x)), 0, n - 1)
@@ -678,11 +706,12 @@ func sample(t: int, w: Vector3) -> Array:
 	var fy := y - j
 	var ids: Array
 	var bw: Vector3
+	var F := FACET
 	if fx + fy <= 1.0 or i + j >= n - 1:
-		ids = [_gid[_key(t, i, j)], _gid[_key(t, i + 1, j)], _gid[_key(t, i, j + 1)]]
+		ids = [_gid[_key(t, i * F, j * F)], _gid[_key(t, (i + 1) * F, j * F)], _gid[_key(t, i * F, (j + 1) * F)]]
 		bw = Vector3(1.0 - fx - fy, fx, fy)
 	else:
-		ids = [_gid[_key(t, i + 1, j + 1)], _gid[_key(t, i, j + 1)], _gid[_key(t, i + 1, j)]]
+		ids = [_gid[_key(t, (i + 1) * F, (j + 1) * F)], _gid[_key(t, i * F, (j + 1) * F)], _gid[_key(t, (i + 1) * F, j * F)]]
 		bw = Vector3(fx + fy - 1.0, 1.0 - fx, 1.0 - fy)
 	var r := g_pos[ids[0]].length() * bw.x + g_pos[ids[1]].length() * bw.y + g_pos[ids[2]].length() * bw.z
 	var nrm := (g_nrm[ids[0]] * bw.x + g_nrm[ids[1]] * bw.y + g_nrm[ids[2]] * bw.z).normalized()

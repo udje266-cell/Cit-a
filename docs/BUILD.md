@@ -71,11 +71,11 @@ les temps d'image ci-dessous sont ceux d'un rendu **logiciel** et ne préjugent 
 | Vitrine de la région (baie, colline en terrasses, forêt, falaise, village), interface masquée | ✅ `tests/art_showcase.gd` : vues globale, régionale, rapprochée ×2 |
 | Raccords du terrain | ✅ par construction (sommets uniques partagés) |
 | Orientation des objets | ✅ verticale = normale de la sphère ; bâtiments tournés vers la place |
-| Construction initiale du monde visuel | ≈ 3,4 s (une fois, au chargement) — **à réduire** (fils de calcul) |
-| Modification locale du terrain | ≈ 160–180 ms |
-| Primitives par image (ombres comprises) | loin 137 k · régional 345 k · près 443 k |
-| Appels de dessin (interface 2D comprise) | loin 108 · régional 220 · près 232 |
-| Sommets du terrain / mémoire | 92 162 ; mémoire statique 78 Mo ; vidéo 30 Mo |
+| Construction initiale du monde visuel | ≈ 3,6 s (une fois, au chargement) — **à réduire** (fils de calcul) |
+| Modification locale du terrain | ≈ 110 ms |
+| Primitives par image (ombres comprises), version facettée v4 | loin 95 k · régional 171 k · près 188 k (v3 lisse : 137 k / 345 k / 443 k) |
+| Appels de dessin (interface 2D comprise) | loin 108 · régional 220 · près 233 |
+| Sommets du terrain / mémoire | 92 162 ; mémoire statique 80 Mo ; vidéo 30 Mo |
 
 À vérifier en priorité sur Android : temps d'image aux distances régionale et rapprochée. Leviers prévus si
 nécessaire : densité forestière (`_build_chunk_props`), ombres des arbres, imposteurs pour les forêts lointaines,

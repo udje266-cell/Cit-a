@@ -43,6 +43,8 @@ Toute décision qui la contredit doit d'abord modifier ce fichier.
 | D33 | 2026-10-26 | Éclairage doux : soleil chaud rasant lié à la caméra, ambiance bleutée 0,55, tonemap filmique, matériaux mats, ombres floues coupées de loin, halo additif. Pas de glow, SSAO ni brouillard volumétrique. | Couleurs préservées, volumes lisibles, coût mobile. |
 | D34 | 2026-10-26 | Interface : zone de sécurité de l'écran, barre d'état à pastilles explicatives, sélecteur de vitesse avec état actif doré + libellé, rail de navigation (Pouvoirs, Foi, Peuples, Affinités, Journal, Cartes, Menu), tiroir de pouvoirs, icônes SVG intégrées (pas de glyphes Unicode). | Lisibilité et cohérence sur téléphone. |
 
+| D35 | 2026-10-26 | Révision DA v4 : **low poly stylisé à facettes franches**. Terre : normale par face sur une grille 2× plus large (grands plans), lissage réduit, crêtes plus marquées ; objets : prismes et polyèdres à faces planes, couleur unie par volume ; eau lisse. Les facettes ne sont jamais obtenues par des couleurs par triangle. | Le rendu lissé v3 était trop arrondi. Bonus : −58 % de primitives de près. |
+
 ## Hypothèses à confirmer par le commanditaire
 
 - Titre définitif du jeu (« Cit-a » = nom du dépôt, utilisé provisoirement).

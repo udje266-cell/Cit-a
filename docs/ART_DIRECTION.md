@@ -1,7 +1,11 @@
 # Direction artistique
 
-Référence d'intention : la douceur des formes et la lisibilité des paysages de *Godus*, appliquées à notre
-planète sphérique et à notre univers d'épée et de magie. Le monde doit sembler **composé et habité** : de
+Référence d'intention : la lisibilité des paysages de *Godus*, en **low poly stylisé à facettes franches** :
+un monde sculpté, légèrement anguleux, chaleureux et lisible, à la géométrie volontaire (révision v4).
+
+**Règle des facettes** : les facettes sont révélées par l'éclairage et l'orientation des surfaces (normale par
+face), jamais par une couleur différente par triangle. Chaque volume ou région garde une couleur unie ou un
+dégradé continu par sommet ; l'eau reste lisse pour contraster avec les terres. Le monde doit sembler **composé et habité** : de
 grandes formes lisibles, peu de couleurs, des détails à leur place.
 
 ## 1. Formes du terrain
@@ -13,7 +17,8 @@ grandes formes lisibles, peu de couleurs, des détails à leur place.
 | Falaises épaisses | Contremarches et rives raides colorées en terre/roche chaude selon la pente. Le relief est exagéré (×0,11) pour que les ruptures se lisent. |
 | Plaines calmes pour les villages | Le terrain est **aplani** sous chaque village (plateau jusqu'à 1,8 R, raccord jusqu'à 2,3 R) au niveau de terrasse de son centre. |
 | Côtes sinueuses, plages propres | La côte naît de l'intersection du terrain lissé avec la sphère de mer ; le sable couvre la terre basse au contact de l'eau. |
-| La triangulation n'est pas un motif | Normales lissées (moyenne des faces voisines), couleurs par sommet sans bruit par triangle. La grille de simulation n'apparaît qu'en mode « Grille (consultation) ». |
+| Grands plans légèrement anguleux | La terre est dessinée sur une grille 2× plus large que celle des hauteurs (`FACET = 2`) avec une **normale par face** : grandes facettes, couleurs continues par sommet (pas de mosaïque). La grille de simulation n'apparaît qu'en mode « Grille (consultation) ». |
+| Arêtes franches, sommets marqués | Lissage réduit (une passe légère), crêtes en `ridge³` plus hautes. |
 
 ## 2. Palette limitée
 | Rôle | Couleur (sRGB) |
@@ -33,9 +38,10 @@ l'**aménagement** (place, abords, champs). Une modulation très lente (±4 %, b
 aplats morts, sans jamais varier d'un triangle à l'autre.
 
 ## 3. Végétation
-- **Feuillus** : tronc conique, canopée de 2 volumes arrondis lissés (2 variantes) ; **conifères** : 3 cônes
+- Tous les volumes sont **à facettes** (`facet_prism`, `facet_blob` : faces planes, couleur unie par volume).
+- **Feuillus** : tronc prismatique, canopée de 2 polyèdres irréguliers à grandes facettes (2 variantes) ; **conifères** : 3 cônes
   étagés ou 1 cône élancé ; **conifère enneigé** ; **palmier** ; **acacia** à couronne plate ; **buisson** ;
-  **rochers** arrondis ; **cactus**.
+  **rochers** polyédriques irréguliers ; **cactus**.
 - Composition : un masque de bruit (`_noise_forest`) crée des **forêts denses** (40 essais par triangle en biome
   forestier), des **bosquets** en prairie et des **clairières** là où le masque est bas. Pas d'arbre sur les
   contremarches, les plages, ni dans le plateau des villages.

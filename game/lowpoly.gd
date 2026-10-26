@@ -50,6 +50,18 @@ func smooth_blob(t: Transform3D, col: Color, detail: int = 1, jitter: float = 0.
 	for i in range(start, verts.size()):
 		normals[i] = (nb * (inv * verts[i])).normalized()
 
+## Volume à facettes franches : faces planes, couleur unie (l'éclairage seul révèle les facettes).
+func facet_prism(t: Transform3D, bottom_r: float, top_r: float, h: float, seg: int, col: Color, top_col: Color = Color(0, 0, 0, 0)) -> void:
+	prism(t, bottom_r, top_r, h, mini(seg, 7), col, true, top_col)
+
+## Polyèdre irrégulier (icosaèdre déformé) : feuillages, rochers.
+func facet_blob(t: Transform3D, col: Color, _detail: int = 0, jitter: float = 0.0, rng: RandomNumberGenerator = null) -> void:
+	var r := rng
+	if r == null:
+		r = RandomNumberGenerator.new()
+		r.seed = hash(col) + int(t.origin.x * 1000.0) + int(t.origin.y * 977.0)
+	blob(t, col, 0, maxf(jitter, 0.1), r, false)
+
 func quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color) -> void:
 	tri(a, b, c, col)
 	tri(a, c, d, col)

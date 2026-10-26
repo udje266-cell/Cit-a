@@ -1,6 +1,6 @@
 extends RefCounted
 ## Bibliothèque d'objets stylisés : végétation, rochers, famille architecturale par espèce, champs, bannières,
-## habitants. Formes arrondies et lissées, palette limitée (voir docs/ART_DIRECTION.md).
+## habitants. Volumes à facettes franches, couleur unie par volume, palette limitée (voir docs/ART_DIRECTION.md).
 ## Tous les maillages ont leur base en y = 0 et une hauteur d'environ 1 (mis à l'échelle à l'instanciation).
 
 const LowPoly = preload("res://game/lowpoly.gd")
@@ -38,28 +38,28 @@ func prop_mesh(kind: String) -> ArrayMesh:
 	rng.seed = hash(kind)
 	match kind:
 		"broadleaf":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.07, 0.05, 0.42, 6, TRUNK)
-			b.smooth_blob(LowPoly.T(Vector3(0, 0.66, 0), Vector3(0.36, 0.32, 0.36)), LEAF, 1)
-			b.smooth_blob(LowPoly.T(Vector3(0.14, 0.84, 0.05), Vector3(0.22, 0.2, 0.22)), LEAF_LIGHT, 1)
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.07, 0.05, 0.42, 6, TRUNK)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.66, 0), Vector3(0.36, 0.32, 0.36)), LEAF, 1)
+			b.facet_blob(LowPoly.T(Vector3(0.14, 0.84, 0.05), Vector3(0.22, 0.2, 0.22)), LEAF_LIGHT, 1)
 		"broadleaf_b":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.07, 0.05, 0.5, 6, TRUNK)
-			b.smooth_blob(LowPoly.T(Vector3(0, 0.78, 0), Vector3(0.3, 0.36, 0.3)), LEAF_DEEP, 1)
-			b.smooth_blob(LowPoly.T(Vector3(-0.12, 0.62, 0.08), Vector3(0.2, 0.18, 0.2)), LEAF, 1)
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.07, 0.05, 0.5, 6, TRUNK)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.78, 0), Vector3(0.3, 0.36, 0.3)), LEAF_DEEP, 1)
+			b.facet_blob(LowPoly.T(Vector3(-0.12, 0.62, 0.08), Vector3(0.2, 0.18, 0.2)), LEAF, 1)
 		"conifer":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.06, 0.05, 0.22, 6, TRUNK)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.16, 0)), 0.36, 0.0, 0.46, 8, NEEDLE)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.42, 0)), 0.28, 0.0, 0.42, 8, NEEDLE_LIGHT)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.66, 0)), 0.18, 0.0, 0.36, 8, NEEDLE)
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.06, 0.05, 0.22, 6, TRUNK)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.16, 0)), 0.36, 0.0, 0.46, 8, NEEDLE)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.42, 0)), 0.28, 0.0, 0.42, 8, NEEDLE_LIGHT)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.66, 0)), 0.18, 0.0, 0.36, 8, NEEDLE)
 		"conifer_b":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.05, 0.04, 0.2, 6, TRUNK)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.14, 0)), 0.24, 0.0, 0.86, 8, NEEDLE)
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.05, 0.04, 0.2, 6, TRUNK)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.14, 0)), 0.24, 0.0, 0.86, 8, NEEDLE)
 		"snow_conifer":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.06, 0.05, 0.22, 6, TRUNK)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.16, 0)), 0.34, 0.0, 0.46, 8, NEEDLE)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.44, 0)), 0.25, 0.0, 0.4, 8, SNOW)
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.06, 0.05, 0.22, 6, TRUNK)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.16, 0)), 0.34, 0.0, 0.46, 8, NEEDLE)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.44, 0)), 0.25, 0.0, 0.4, 8, SNOW)
 		"palm":
 			for i in 4:
-				b.smooth_prism(LowPoly.T(Vector3(i * 0.03, i * 0.19, 0)), 0.05, 0.045, 0.2, 5, TRUNK.lightened(0.12))
+				b.facet_prism(LowPoly.T(Vector3(i * 0.03, i * 0.19, 0)), 0.05, 0.045, 0.2, 5, TRUNK.lightened(0.12))
 			for k in 6:
 				var a := TAU * k / 6.0
 				var dir := Vector3(cos(a), 0, sin(a))
@@ -70,19 +70,19 @@ func prop_mesh(kind: String) -> ArrayMesh:
 				b.tri_n(base - side, tip, base + side, up, up, up, LEAF_LIGHT)
 				b.tri_n(base + side, tip, base - side, -up, -up, -up, LEAF)
 		"acacia":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.05, 0.035, 0.5, 6, TRUNK)
-			b.smooth_blob(LowPoly.T(Vector3(0, 0.56, 0), Vector3(0.44, 0.12, 0.4)), Color(0.5, 0.58, 0.28), 1)
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.05, 0.035, 0.5, 6, TRUNK)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.56, 0), Vector3(0.44, 0.12, 0.4)), Color(0.5, 0.58, 0.28), 1)
 		"bush":
-			b.smooth_blob(LowPoly.T(Vector3(0, 0.12, 0), Vector3(0.3, 0.2, 0.28)), LEAF, 1)
-			b.smooth_blob(LowPoly.T(Vector3(0.2, 0.08, 0.1), Vector3(0.18, 0.13, 0.17)), LEAF_LIGHT, 1)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.12, 0), Vector3(0.3, 0.2, 0.28)), LEAF, 1)
+			b.facet_blob(LowPoly.T(Vector3(0.2, 0.08, 0.1), Vector3(0.18, 0.13, 0.17)), LEAF_LIGHT, 1)
 		"rock":
-			b.smooth_blob(LowPoly.T(Vector3(0, 0.08, 0), Vector3(0.42, 0.26, 0.36)), ROCK, 1, 0.12, rng)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.08, 0), Vector3(0.42, 0.26, 0.36)), ROCK, 1, 0.12, rng)
 		"rock_b":
-			b.smooth_blob(LowPoly.T(Vector3(0, 0.2, 0), Vector3(0.3, 0.42, 0.28)), ROCK_DARK, 1, 0.15, rng)
-			b.smooth_blob(LowPoly.T(Vector3(0.28, 0.06, 0.05), Vector3(0.2, 0.15, 0.18)), ROCK, 1, 0.1, rng)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.2, 0), Vector3(0.3, 0.42, 0.28)), ROCK_DARK, 1, 0.15, rng)
+			b.facet_blob(LowPoly.T(Vector3(0.28, 0.06, 0.05), Vector3(0.2, 0.15, 0.18)), ROCK, 1, 0.1, rng)
 		"cactus":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.08, 0.07, 0.7, 8, Color(0.36, 0.56, 0.32))
-			b.smooth_prism(LowPoly.T(Vector3(0.13, 0.3, 0)), 0.05, 0.045, 0.25, 6, Color(0.34, 0.53, 0.3))
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.08, 0.07, 0.7, 8, Color(0.36, 0.56, 0.32))
+			b.facet_prism(LowPoly.T(Vector3(0.13, 0.3, 0)), 0.05, 0.045, 0.25, 6, Color(0.34, 0.53, 0.3))
 		"plaza":
 			var up := Vector3.UP
 			for k in 16:
@@ -139,8 +139,8 @@ func building_mesh(kind: String, species: String, era: int, people_col: Color, l
 			_house(b, str(st.shape), wall, roof, trim, people_col, tall)
 		"production":
 			# Grenier rond et petit atelier (silhouette distincte : cylindre + cône).
-			b.smooth_prism(LowPoly.T(Vector3(-0.15, 0, 0)), 0.32, 0.32, 0.62 * tall, 10, wall.darkened(0.06))
-			b.smooth_prism(LowPoly.T(Vector3(-0.15, 0.62 * tall, 0)), 0.4, 0.0, 0.42, 10, roof)
+			b.facet_prism(LowPoly.T(Vector3(-0.15, 0, 0)), 0.32, 0.32, 0.62 * tall, 10, wall.darkened(0.06))
+			b.facet_prism(LowPoly.T(Vector3(-0.15, 0.62 * tall, 0)), 0.4, 0.0, 0.42, 10, roof)
 			b.box(LowPoly.T(Vector3(0.3, 0, 0.05)), Vector3(0.42, 0.36, 0.4), wall)
 			b.gable(LowPoly.T(Vector3(0.3, 0.36, 0.05)), Vector3(0.52, 0.24, 0.5), roof.darkened(0.08))
 			b.box(LowPoly.T(Vector3(0.3, 0, 0.26)), Vector3(0.14, 0.2, 0.02), trim.darkened(0.3))
@@ -148,13 +148,13 @@ func building_mesh(kind: String, species: String, era: int, people_col: Color, l
 			# Lieu de culte : socle de pierre, colonnes, toit doré ; clocher à partir de l'âge des royaumes.
 			b.box(LowPoly.T(Vector3.ZERO), Vector3(1.0, 0.12, 0.8), Color(0.78, 0.76, 0.7))
 			for p in [Vector3(-0.38, 0.12, -0.28), Vector3(0.38, 0.12, -0.28), Vector3(0.38, 0.12, 0.28), Vector3(-0.38, 0.12, 0.28)]:
-				b.smooth_prism(LowPoly.T(p), 0.06, 0.06, 0.5, 8, Color(0.94, 0.92, 0.86))
+				b.facet_prism(LowPoly.T(p), 0.06, 0.06, 0.5, 8, Color(0.94, 0.92, 0.86))
 			b.box(LowPoly.T(Vector3(0, 0.12, 0)), Vector3(0.5, 0.42, 0.36), wall)
 			b.box(LowPoly.T(Vector3(0, 0.62, 0)), Vector3(0.92, 0.08, 0.72), Color(0.9, 0.88, 0.82))
 			b.gable(LowPoly.T(Vector3(0, 0.7, 0)), Vector3(1.0, 0.34, 0.8), Color(0.86, 0.66, 0.3))
 			if era >= 2:
 				b.box(LowPoly.T(Vector3(0, 0.7, -0.3)), Vector3(0.2, 0.55, 0.2), Color(0.9, 0.88, 0.82))
-				b.smooth_prism(LowPoly.T(Vector3(0, 1.25, -0.3)), 0.16, 0.0, 0.32, 6, Color(0.86, 0.66, 0.3))
+				b.facet_prism(LowPoly.T(Vector3(0, 1.25, -0.3)), 0.16, 0.0, 0.32, 6, Color(0.86, 0.66, 0.3))
 		"collective":
 			# Grande halle : long volume, grand toit, porche et bandeau aux couleurs du peuple.
 			b.box(LowPoly.T(Vector3.ZERO), Vector3(1.3, 0.48 * tall, 0.74), wall)
@@ -165,11 +165,11 @@ func building_mesh(kind: String, species: String, era: int, people_col: Color, l
 	# Époques avancées : métal (voie scientifique) ou cristal (voie magique).
 	if era >= 4:
 		if lean >= 0.0:
-			b.smooth_prism(LowPoly.T(Vector3(-0.3, 0.3, 0.2)), 0.07, 0.07, 0.8 * tall, 8, Color(0.62, 0.65, 0.7))
+			b.facet_prism(LowPoly.T(Vector3(-0.3, 0.3, 0.2)), 0.07, 0.07, 0.8 * tall, 8, Color(0.62, 0.65, 0.7))
 		else:
-			b.smooth_blob(LowPoly.T(Vector3(0, 0.9 * tall + 0.3, 0), Vector3(0.1, 0.26, 0.1)), Color(0.72, 0.5, 0.95), 0)
+			b.facet_blob(LowPoly.T(Vector3(0, 0.9 * tall + 0.3, 0), Vector3(0.1, 0.26, 0.1)), Color(0.72, 0.5, 0.95), 0)
 	if era >= 5:
-		b.smooth_prism(LowPoly.T(Vector3(0, 0.6 * tall, 0)), 0.16, 0.02, 1.1, 8, Color(0.9, 0.94, 0.98))
+		b.facet_prism(LowPoly.T(Vector3(0, 0.6 * tall, 0)), 0.16, 0.02, 1.1, 8, Color(0.9, 0.94, 0.98))
 	var m := b.to_mesh()
 	_cache[key] = m
 	return m
@@ -177,9 +177,9 @@ func building_mesh(kind: String, species: String, era: int, people_col: Color, l
 func _house(b, shape: String, wall: Color, roof: Color, trim: Color, people_col: Color, tall: float) -> void:
 	match shape:
 		"round":
-			b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.4, 0.38, 0.46 * tall, 10, wall)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.36 * tall, 0)), 0.41, 0.41, 0.06, 10, people_col)
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.46 * tall, 0)), 0.52, 0.0, 0.5, 10, roof)
+			b.facet_prism(LowPoly.T(Vector3.ZERO), 0.4, 0.38, 0.46 * tall, 6, wall)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.36 * tall, 0)), 0.41, 0.41, 0.06, 6, people_col)
+			b.facet_prism(LowPoly.T(Vector3(0, 0.46 * tall, 0)), 0.54, 0.0, 0.52, 6, roof)
 			b.box(LowPoly.T(Vector3(0, 0, 0.38)), Vector3(0.16, 0.26, 0.04), trim.darkened(0.3))
 		"stone":
 			b.box(LowPoly.T(Vector3.ZERO), Vector3(0.78, 0.5 * tall, 0.66), wall)
@@ -189,7 +189,7 @@ func _house(b, shape: String, wall: Color, roof: Color, trim: Color, people_col:
 			b.box(LowPoly.T(Vector3(0, 0, 0.34)), Vector3(0.16, 0.26, 0.02), trim.darkened(0.35))
 		"stilts":
 			for p in [Vector3(-0.28, 0, -0.26), Vector3(0.28, 0, -0.26), Vector3(0.28, 0, 0.26), Vector3(-0.28, 0, 0.26)]:
-				b.smooth_prism(LowPoly.T(p), 0.04, 0.04, 0.22, 6, trim)
+				b.facet_prism(LowPoly.T(p), 0.04, 0.04, 0.22, 6, trim)
 			b.box(LowPoly.T(Vector3(0, 0.22, 0)), Vector3(0.72, 0.38 * tall, 0.64), wall)
 			b.box(LowPoly.T(Vector3(0, 0.52 * tall, 0)), Vector3(0.74, 0.05, 0.66), people_col)
 			b.gable(LowPoly.T(Vector3(0, 0.22 + 0.38 * tall, 0)), Vector3(0.9, 0.36, 0.82), roof)
@@ -199,9 +199,9 @@ func _house(b, shape: String, wall: Color, roof: Color, trim: Color, people_col:
 			b.box(LowPoly.T(Vector3(0, 0.4 * tall, 0)), Vector3(0.8, 0.05, 0.76), people_col)
 			b.box(LowPoly.T(Vector3(0, 0, 0.38)), Vector3(0.18, 0.28, 0.02), trim.darkened(0.3))
 		"dome":
-			b.smooth_blob(LowPoly.T(Vector3.ZERO, Vector3(0.48, 0.46 * tall, 0.48)), wall, 1)
-			b.smooth_prism(LowPoly.T(Vector3(0.42, 0, 0)), 0.16, 0.14, 0.24, 8, wall.darkened(0.05))
-			b.smooth_prism(LowPoly.T(Vector3(0, 0.4 * tall, 0)), 0.1, 0.0, 0.2, 6, people_col)
+			b.facet_blob(LowPoly.T(Vector3.ZERO, Vector3(0.48, 0.46 * tall, 0.48)), wall, 1)
+			b.facet_prism(LowPoly.T(Vector3(0.42, 0, 0)), 0.16, 0.14, 0.24, 8, wall.darkened(0.05))
+			b.facet_prism(LowPoly.T(Vector3(0, 0.4 * tall, 0)), 0.1, 0.0, 0.2, 6, people_col)
 		_:
 			b.box(LowPoly.T(Vector3.ZERO), Vector3(0.72, 0.46 * tall, 0.56), wall)
 			b.box(LowPoly.T(Vector3(0, 0.38 * tall, 0)), Vector3(0.74, 0.05, 0.58), people_col)
@@ -215,7 +215,7 @@ func banner_mesh(species: String, people_col: Color, deity_col: Color) -> ArrayM
 	if _cache.has(key):
 		return _cache[key]
 	var b := LowPoly.new()
-	b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.025, 0.02, 1.0, 6, Color(0.4, 0.3, 0.2))
+	b.facet_prism(LowPoly.T(Vector3.ZERO), 0.025, 0.02, 1.0, 6, Color(0.4, 0.3, 0.2))
 	var shape: String = STYLES.get(species, STYLES.vivace).flag
 	var top := Vector3(0.02, 0.95, 0)
 	var pts: Array
@@ -231,8 +231,8 @@ func banner_mesh(species: String, people_col: Color, deity_col: Color) -> ArrayM
 		var n := Vector3.BACK
 		b.tri_n(p[0], p[1], p[2], n, n, n, people_col)
 		b.tri_n(p[0], p[2], p[1], -n, -n, -n, people_col.darkened(0.1))
-	b.smooth_blob(LowPoly.T(top + Vector3(0.18, -0.16, 0.02), Vector3(0.07, 0.07, 0.03)), deity_col, 0)
-	b.smooth_blob(LowPoly.T(Vector3(0, 1.02, 0), Vector3(0.05, 0.05, 0.05)), Color(0.92, 0.78, 0.36), 0)
+	b.facet_blob(LowPoly.T(top + Vector3(0.18, -0.16, 0.02), Vector3(0.07, 0.07, 0.03)), deity_col, 0)
+	b.facet_blob(LowPoly.T(Vector3(0, 1.02, 0), Vector3(0.05, 0.05, 0.05)), Color(0.92, 0.78, 0.36), 0)
 	var m := b.to_mesh()
 	_cache[key] = m
 	return m
@@ -249,7 +249,7 @@ func wall_mesh(stone: bool) -> ArrayMesh:
 		b.box(LowPoly.T(Vector3(0.3, 0.42, 0)), Vector3(0.22, 0.12, 0.22), Color(0.7, 0.67, 0.62))
 	else:
 		for i in 5:
-			b.smooth_prism(LowPoly.T(Vector3(-0.4 + i * 0.2, 0, 0)), 0.06, 0.0, 0.42, 6, TRUNK.lightened(0.05))
+			b.facet_prism(LowPoly.T(Vector3(-0.4 + i * 0.2, 0, 0)), 0.06, 0.0, 0.42, 6, TRUNK.lightened(0.05))
 	var m := b.to_mesh()
 	_cache[key] = m
 	return m
@@ -260,13 +260,13 @@ func figure_mesh(people_col: Color, affinity: String) -> ArrayMesh:
 	if _cache.has(key):
 		return _cache[key]
 	var b := LowPoly.new()
-	b.smooth_prism(LowPoly.T(Vector3.ZERO), 0.22, 0.12, 0.62, 8, people_col)
-	b.smooth_blob(LowPoly.T(Vector3(0, 0.78, 0), Vector3(0.15, 0.15, 0.15)), Color(0.93, 0.8, 0.66), 1)
+	b.facet_prism(LowPoly.T(Vector3.ZERO), 0.22, 0.12, 0.62, 8, people_col)
+	b.facet_blob(LowPoly.T(Vector3(0, 0.78, 0), Vector3(0.15, 0.15, 0.15)), Color(0.93, 0.8, 0.66), 1)
 	if affinity in ["sword", "both"]:
 		b.box(LowPoly.T(Vector3(0.24, 0.2, 0)), Vector3(0.05, 0.6, 0.05), Color(0.85, 0.88, 0.95))
 		b.box(LowPoly.T(Vector3(0.24, 0.25, 0)), Vector3(0.16, 0.04, 0.05), Color(0.8, 0.62, 0.3))
 	if affinity in ["magic", "both"]:
-		b.smooth_blob(LowPoly.T(Vector3(-0.26, 0.62, 0), Vector3(0.1, 0.1, 0.1)), Color(0.72, 0.48, 0.95), 1)
+		b.facet_blob(LowPoly.T(Vector3(-0.26, 0.62, 0), Vector3(0.1, 0.1, 0.1)), Color(0.72, 0.48, 0.95), 1)
 	var m := b.to_mesh()
 	_cache[key] = m
 	return m
