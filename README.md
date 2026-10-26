@@ -10,6 +10,7 @@ autonomes grandir, se convertir, se faire la guerre et passer de l'épée et de 
 - Catalogues : [espèces et traits](docs/CATALOG.md) · [pouvoirs](docs/POWERS.md) · [science/magie](docs/PROGRESSION.md)
 - Plan et état réel des fonctionnalités : [docs/ROADMAP.md](docs/ROADMAP.md)
 - Lancement, tests, APK, vérifications : [docs/BUILD.md](docs/BUILD.md)
+- Démonstration vérifiable : [docs/DEMO.md](docs/DEMO.md)
 - Registre des décisions : [docs/DECISIONS.md](docs/DECISIONS.md)
 
 ```

@@ -42,7 +42,12 @@ var tutorial_label: Label
 var log_panel: PanelContainer
 var log_text: RichTextLabel
 var modal: Control
-var current_family := "sign"
+var current_family := "terrain"
+var family_label: RichTextLabel
+var family_scroll: ScrollContainer
+var toast: PanelContainer
+var toast_label: Label
+var tutorial_skip: Button
 var selected_cell := -1
 var _dirty := true
 
@@ -144,7 +149,7 @@ func _icon_button(icon: String, tip: String, cb: Callable, size: float = 52.0) -
 func blocks(pos: Vector2) -> bool:
 	if modal != null:
 		return true
-	for c in [top_bar, rail, drawer, info_panel, confirm_bar, log_panel]:
+	for c in [top_bar, rail, drawer, info_panel, confirm_bar, log_panel, tutorial_panel]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(pos):
 			return true
 	for c in get_children():
@@ -248,22 +253,51 @@ func _build_rail() -> void:
 
 func _build_tutorial() -> void:
 	tutorial_panel = PanelContainer.new()
-	tutorial_panel.add_theme_stylebox_override("panel", _box(Color(0.12, 0.1, 0.04, 0.85), 12, Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.6)))
-	tutorial_panel.anchor_left = 0.5; tutorial_panel.anchor_right = 0.5
-	tutorial_panel.offset_left = -330; tutorial_panel.offset_right = 330; tutorial_panel.offset_top = 72
-	tutorial_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tutorial_panel.add_theme_stylebox_override("panel", _box(Color(0.12, 0.1, 0.04, 0.9), 12, Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.7)))
+	tutorial_panel.offset_left = 0; tutorial_panel.offset_right = 470; tutorial_panel.offset_top = 72
 	layout.add_child(tutorial_panel)
+	var v := VBoxContainer.new()
+	tutorial_panel.add_child(v)
 	tutorial_label = Label.new()
 	tutorial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tutorial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tutorial_label.custom_minimum_size.x = 440
 	tutorial_label.add_theme_color_override("font_color", Color(1, 0.93, 0.7))
 	tutorial_label.add_theme_font_size_override("font_size", 18)
-	tutorial_panel.add_child(tutorial_label)
+	v.add_child(tutorial_label)
+	var h := HBoxContainer.new()
+	v.add_child(h)
+	var next := _button("Étape suivante", main.tutorial_next, 0)
+	next.custom_minimum_size.y = 44
+	h.add_child(next)
+	tutorial_skip = _button("Passer le tutoriel", main.tutorial_skip, 0)
+	tutorial_skip.custom_minimum_size.y = 44
+	h.add_child(tutorial_skip)
 
 func set_tutorial(text: String) -> void:
 	tutorial_label.text = text
-	# Masqué quand un panneau occupe déjà l'écran, pour ne jamais recouvrir d'information.
-	tutorial_panel.visible = text != "" and top_bar.visible and not info_panel.visible and not log_panel.visible and not confirm_bar.visible
+	tutorial_panel.visible = text != "" and top_bar.visible and not log_panel.visible
+
+## Bandeau de retour (résultat d'un pouvoir, explication), masqué après quelques secondes.
+func show_toast(text: String, col: Color = Color(0.75, 0.95, 0.8)) -> void:
+	if toast == null:
+		toast = PanelContainer.new()
+		toast.add_theme_stylebox_override("panel", _box(Color(0.05, 0.07, 0.1, 0.94), 12, Color(col.r, col.g, col.b, 0.8)))
+		toast.anchor_left = 0.5; toast.anchor_right = 0.5; toast.anchor_top = 1.0; toast.anchor_bottom = 1.0
+		toast.offset_left = -380; toast.offset_right = 260; toast.offset_top = -300; toast.offset_bottom = -190
+		toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layout.add_child(toast)
+		toast_label = Label.new()
+		toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		toast_label.add_theme_font_size_override("font_size", 18)
+		toast.add_child(toast_label)
+	toast_label.text = text
+	toast_label.add_theme_color_override("font_color", col)
+	toast.visible = true
+	toast.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_interval(5.0)
+	tw.tween_property(toast, "modulate:a", 0.0, 0.8)
+	tw.tween_callback(func(): toast.visible = false)
 
 # ------------------------------------------------------------------ Panneau d'information (sélection)
 
@@ -306,9 +340,7 @@ func refresh_info() -> void:
 	if not s.is_empty():
 		var p: Dictionary = world.peoples[int(s.people)]
 		var tot := maxf(float(s.aff.none) + float(s.aff.magic) + float(s.aff.sword) + float(s.aff.both), 1.0)
-		t += "\n[b][color=#ffd966]%s[/color][/b] — %s (%s)\n" % [s.name, p.name, p.polity]
-		t += "Population %d / capacité %d · Stabilité %.0f %%\n" % [int(s.pop), int(s.capacity), float(s.stability) * 100.0]
-		t += "Réserves de nourriture : %d · Force militaire %.0f\n" % [int(s.food), float(s.military)]
+		t += "\n" + village_summary(s)
 		t += "\n[b]Affinités[/b] (sur %d habitants)\n" % int(tot)
 		for a in ["none", "magic", "sword", "both"]:
 			t += "  %s : %d (%.1f %%)\n" % [Affinity.NAMES[a], int(s.aff[a]), float(s.aff[a]) / tot * 100.0]
@@ -344,15 +376,23 @@ func refresh_info() -> void:
 func _build_power_bar() -> void:
 	drawer = PanelContainer.new()
 	drawer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	drawer.offset_top = -150
+	drawer.offset_top = -178
 	drawer.offset_right = -RAIL_W - 8
 	layout.add_child(drawer)
 	var v := VBoxContainer.new()
 	drawer.add_child(v)
+	family_label = RichTextLabel.new()
+	family_label.bbcode_enabled = true
+	family_label.fit_content = true
+	family_label.scroll_active = false
+	family_label.add_theme_font_size_override("normal_font_size", 17)
+	family_label.add_theme_font_size_override("bold_font_size", 17)
+	v.add_child(family_label)
 	var fs := ScrollContainer.new()
 	fs.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	fs.custom_minimum_size.y = 58
 	v.add_child(fs)
+	family_scroll = fs
 	family_bar = HBoxContainer.new()
 	fs.add_child(family_bar)
 	var ps := ScrollContainer.new()
@@ -391,36 +431,65 @@ func _select_family(fam: String) -> void:
 	current_family = fam
 	for b in family_bar.get_children():
 		b.set_pressed_no_signal(b.get_meta("family", "") == fam)
+		if b.get_meta("family", "") == fam:
+			family_scroll.ensure_control_visible.call_deferred(b)
 	_rebuild_powers()
 
 func _rebuild_powers() -> void:
 	for c in power_bar.get_children():
 		c.queue_free()
 	var d: Dictionary = world.deities[world.player_deity]
+	var count := 0
 	for pid in world.cat.power_order:
 		var p: Dictionary = world.cat.powers[pid]
 		if p.family != current_family:
 			continue
-		var unlocked := Powers.is_unlocked(world, d, pid)
+		count += 1
+		var reason := power_block_reason(pid)
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(0, 56)
-		if unlocked:
+		if Powers.is_unlocked(world, d, pid):
 			b.text = "%s  ·  %s" % [p.name, ("%.0f énergie" % float(p.cost)) if pid != "don_affinite" else "coût variable"]
 			b.icon = Icons.get_icon("bolt")
-			b.disabled = float(d.energy) < float(p.cost) and pid != "don_affinite"
 		else:
 			b.text = "%s  (niveau %d)" % [p.name, int(p.unlock.get("level", 0))]
 			b.icon = Icons.get_icon("lock")
-			b.disabled = true
+		# Jamais désactivé : toucher un pouvoir indisponible explique pourquoi (les infobulles n'existent pas au doigt).
+		if reason != "":
+			b.modulate = Color(1, 1, 1, 0.55)
 		b.tooltip_text = "%s\n%s" % [p.desc, p.interactions]
-		b.pressed.connect(main.select_power.bind(pid))
+		b.set_meta("power", pid)
+		b.pressed.connect(_on_power_pressed.bind(pid))
 		power_bar.add_child(b)
+	family_label.text = "[b]Catégorie : %s[/b] — %s · %d pouvoir(s)" % [FAMILY_SHORT.get(current_family, current_family), world.cat.power_families[current_family], count]
 	brush_toggle = CheckButton.new()
 	brush_toggle.text = "Pinceau"
 	brush_toggle.tooltip_text = "Glisser le doigt applique le pouvoir de terrain en continu"
 	brush_toggle.visible = current_family == "terrain"
 	brush_toggle.toggled.connect(main.set_brush)
 	power_bar.add_child(brush_toggle)
+
+## Raison pour laquelle un pouvoir ne peut pas être lancé maintenant ("" s'il est utilisable).
+func power_block_reason(pid: String) -> String:
+	var d: Dictionary = world.deities[world.player_deity]
+	var p: Dictionary = world.cat.powers[pid]
+	if not Powers.is_unlocked(world, d, pid):
+		var lvl := int(p.unlock.get("level", 0))
+		var need := int(world.cat.level_xp[mini(lvl, world.cat.level_xp.size() - 1)])
+		return "Verrouillé : débloqué au niveau %d (vous êtes niveau %d, %d / %d XP). Les objectifs de la fiche Foi font progresser." % [lvl, int(d.level), int(d.xp), need]
+	if pid != "don_affinite" and float(d.energy) < float(p.cost):
+		var rate := maxf(float(d.faith_rate), 0.01)
+		return "Énergie insuffisante : %.1f / %.0f. Votre foi rapporte +%.2f par an (≈ %d ans d'attente)." % [float(d.energy), float(p.cost), float(d.faith_rate), int(ceil((float(p.cost) - float(d.energy)) / rate))]
+	return ""
+
+func _on_power_pressed(pid: String) -> void:
+	var why := power_block_reason(pid)
+	if why != "":
+		confirm_bar.visible = true
+		confirm_ok.disabled = true
+		confirm_label.text = "[b]%s[/b]\n[color=#ffb070]%s[/color]\n%s" % [world.cat.powers[pid].name, why, world.cat.powers[pid].desc]
+		return
+	main.select_power(pid)
 
 func _build_confirm_bar() -> void:
 	confirm_bar = PanelContainer.new()
@@ -566,6 +635,16 @@ func show_peoples() -> void:
 func show_overlays() -> void:
 	var body := open_modal("Cartes thématiques")
 	body.add_child(_rich("Choisissez ce que la planète affiche. La grille des cellules de simulation n'apparaît qu'en mode « Grille »."))
+	var names := CheckButton.new()
+	names.text = "Noms des villages"
+	names.button_pressed = main.view.show_names
+	names.toggled.connect(main.view.set_names)
+	body.add_child(names)
+	var borders := CheckButton.new()
+	borders.text = "Frontières des peuples"
+	borders.button_pressed = main.view.show_borders
+	borders.toggled.connect(main.view.set_borders)
+	body.add_child(borders)
 	for k in PlanetView.OVERLAYS:
 		var b := _button(PlanetView.OVERLAYS[k], func():
 			main.set_overlay(k)
@@ -667,14 +746,28 @@ func show_people(pid: int) -> void:
 	for hst in p.history.slice(maxi(0, p.history.size() - 15)):
 		t += "  An %d — %s\n" % [int(hst.year), hst.text]
 	body.add_child(_rich(t))
+	body.add_child(_rich("\n[b]Établissements[/b]"))
+	for st in world.people_settlements(pid):
+		var row := HBoxContainer.new()
+		var l := Label.new()
+		l.text = "%s — %d hab." % [st.name, int(st.pop)]
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(l)
+		row.add_child(_button("Voir", main.focus_settlement.bind(int(st.id))))
+		row.add_child(_button("Habitants", show_individuals.bind(int(st.id))))
+		body.add_child(row)
 
 func show_individuals(sid: int) -> void:
 	var s: Dictionary = world.settlements[sid]
 	var p: Dictionary = world.peoples[int(s.people)]
 	var body := open_modal("Habitants représentatifs de " + s.name)
-	body.add_child(_rich("[i]Individus tirés de la distribution réelle de l'établissement (affichage seulement : la simulation est agrégée).[/i]\n"))
+	body.add_child(_rich("[i]Individus tirés de la distribution réelle de l'établissement : traits selon leurs fréquences, affinité et origine selon les comptes de naissances (simulation agrégée).[/i]\n" + affinity_origin_summary(s)))
 	for ind in Genetics.representatives(world.cat, s, p.species, 6, sid * 31 + world.year):
 		var t := "[b]%s[/b], %d ans — [color=#ffd966]%s[/color]\n" % [ind.name, int(ind.age), Affinity.NAMES[ind.affinity]]
+		if ind.affinity != "none":
+			t += "  Origine de l'affinité : %s\n" % Affinity.source_label(str(ind.origin))
+		else:
+			t += "  Aucune affinité (naissance non attribuée ou hasard)\n"
 		t += "  Traits : %s\n" % (", ".join(ind.traits.map(func(x): return world.cat.traits[x].name)) if ind.traits.size() > 0 else "aucun trait marquant")
 		t += "  Maîtrise magique %.0f %% · maîtrise de l'épée %.0f %% · entraînement aux armes %.0f %%\n" % [float(ind.mastery_magic) * 100.0, float(ind.mastery_sword) * 100.0, float(ind.weapon_training) * 100.0]
 		body.add_child(_rich(t))
@@ -920,6 +1013,9 @@ func show_game_menu() -> void:
 	share.custom_minimum_size.y = 52
 	body.add_child(share)
 	body.add_child(_rich("[i]Le partage en ligne nécessite un service d'hébergement qui n'est pas encore configuré (voir docs/ARCHITECTURE.md). L'export local produit un fichier .cworld partageable manuellement.[/i]"))
+	body.add_child(_button("Revoir le tutoriel", func():
+		close_modal()
+		main.tutorial_restart()))
 	body.add_child(_button("Retour à l'écran des mondes", main.back_to_menu))
 	body.add_child(_rich(main.perf_text()))
 
@@ -953,3 +1049,86 @@ func show_main_menu(worlds: Array, exports: Array) -> void:
 	# Le menu principal ne se ferme pas : il faut choisir un monde.
 	var close_btn: Button = modal.get_child(1).get_child(0).get_child(0).get_child(1)
 	close_btn.visible = false
+
+
+# ------------------------------------------------------------------ Lecture d'un village
+
+## Fiche synthétique : identité, peuple, divinité, ressources, besoins, développement, activité, problèmes.
+func village_summary(s: Dictionary) -> String:
+	var p: Dictionary = world.peoples[int(s.people)]
+	var d: Dictionary = world.deities[int(p.deity)]
+	var t := "[b][color=#ffd966]%s[/color][/b] — %s\n" % [s.name, p.name]
+	t += "%s · %s · fondé en l'an %d\n" % [world.cat.species[p.species].name, p.polity, int(s.founded)]
+	# Divinité et religion dominante.
+	var main_rel := Faith.main_religion(s)
+	var rel_txt := "aucune"
+	if main_rel != "":
+		var rel: Dictionary = world.religions[int(main_rel)]
+		rel_txt = "%s (%.0f %%, dieu : %s)" % [rel.name, float(s.faith[main_rel]) * 100.0, world.deities[int(rel.deity)].name]
+	t += "Divinité d'origine : %s · Religion dominante : %s · Ferveur %.0f %%\n" % [d.name, rel_txt, float(s.fervor) * 100.0]
+	# Population et tendance.
+	var delta := float(s.pop) - float(s.get("prev_pop", s.pop))
+	t += "Population [b]%d[/b] (%s%.1f cette année) · capacité du milieu %d\n" % [int(s.pop), "+" if delta >= 0.0 else "", delta, int(s.capacity)]
+	# Ressources du territoire.
+	var res := {}
+	for c in s.territory:
+		for r in world.planet.res_list(int(c)):
+			res[r] = true
+	t += "Ressources du territoire (%d cellules) : %s\n" % [s.territory.size(), ", ".join(res.keys().map(func(r): return Planet.RES_NAMES[r])) if res.size() > 0 else "aucune"]
+	# Besoins.
+	var needs := []
+	var ratio := float(s.pop) / maxf(float(s.capacity), 1.0)
+	if s.statuses.has("famine") or float(s.food) < float(s.pop) * 0.2:
+		needs.append("nourriture (réserves %d)" % int(s.food))
+	if ratio > 0.85:
+		needs.append("espace : population proche de la capacité (%.0f %%) → émigration probable" % (ratio * 100.0))
+	if float(s.stability) < 0.4:
+		needs.append("stabilité (%.0f %%)" % (float(s.stability) * 100.0))
+	if float(s.fervor) < 0.3:
+		needs.append("foi : ferveur faible")
+	t += "Besoins : %s\n" % ("; ".join(needs) if needs.size() > 0 else "satisfaits")
+	# Développement.
+	t += "Développement : %s · %d découverte(s) · voie %s\n" % [world.cat.eras[int(p.era)], p.techs.size(), "science" if float(p.lean) > 0.2 else ("magie" if float(p.lean) < -0.2 else "hybride")]
+	# Activité actuelle.
+	var acts := []
+	var cur: String = p.research.current
+	if cur != "":
+		acts.append("recherche « %s » (%.0f %%)" % [world.cat.techs[cur].name, float(p.research.progress) / float(world.cat.techs[cur].cost) * 100.0])
+	if delta > 0.05:
+		acts.append("croissance")
+	elif delta < -0.05:
+		acts.append("déclin")
+	if ratio > 0.7 and float(s.pop) > 30:
+		acts.append("prépare une colonie")
+	if world.people_at_war(int(s.people)):
+		acts.append("en guerre")
+	t += "Activité : %s\n" % (", ".join(acts) if acts.size() > 0 else "vie quotidienne")
+	# Problèmes.
+	var probs := []
+	for k in s.statuses:
+		var tmp: Dictionary = world.cat.temporary[k]
+		if float(tmp.fx.get("fert", 0.0)) < 0.0 or k in ["traumatise", "epidemie", "famine", "maudit"]:
+			probs.append("%s (%d ans)" % [tmp.name, int(s.statuses[k])])
+	t += "Problèmes : %s\n" % ("[color=#ffab66]" + ", ".join(probs) + "[/color]" if probs.size() > 0 else "aucun")
+	# Dernier événement le concernant.
+	for i in range(world.chronicle.size() - 1, maxi(-1, world.chronicle.size() - 120), -1):
+		var e: Dictionary = world.chronicle[i]
+		if str(e.txt).find(str(s.name)) >= 0:
+			t += "Dernier événement (an %d) : %s — [i]%s[/i]\n" % [int(e.y), e.txt, e.why]
+			break
+	return t
+
+## Répartition des origines d'affinité dans un établissement.
+func affinity_origin_summary(s: Dictionary) -> String:
+	var t := "\n[b]Origine des affinités dans ce village[/b]\n"
+	var any := false
+	for a in ["magic", "sword", "both"]:
+		var srcs: Dictionary = s.get("aff_src", {}).get(a, {})
+		var parts := []
+		for k in srcs:
+			if float(srcs[k]) >= 0.5:
+				parts.append("%s : %d" % [Affinity.source_label(k), int(round(float(srcs[k])))])
+		if parts.size() > 0:
+			any = true
+			t += "  %s — %s\n" % [Affinity.NAMES[a], "; ".join(parts)]
+	return t if any else t + "  aucun porteur d'affinité pour l'instant\n"

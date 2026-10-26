@@ -18,6 +18,8 @@ static func _migrate_0_to_1(d: Dictionary) -> Dictionary:
 	for s in d.get("settlements", []):
 		if not s.has("aff"):
 			s["aff"] = {"none": float(s.get("pop", 0.0)), "magic": 0.0, "sword": 0.0, "both": 0.0}
+		if not s.has("aff_src"):
+			s["aff_src"] = {"magic": {}, "sword": {}, "both": {}}
 		if not s.has("mastery"):
 			s["mastery"] = {"magic": 0.0, "sword": 0.0}
 		s["training"] = float(s.get("training", 0.0))

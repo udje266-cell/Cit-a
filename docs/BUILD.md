@@ -19,6 +19,7 @@ godot --headless --path . --import                       # première fois : impo
 godot --headless --path . -s tests/run_tests.gd          # code de sortie 0 = succès
 godot --headless --path . -s tests/smoke_game.gd         # flux complet de l'interface
 xvfb-run godot --path . --rendering-method gl_compatibility -s tests/art_showcase.gd -- <dossier>  # vitrine DA
+xvfb-run godot --path . --rendering-method gl_compatibility -s tests/interaction_demo.gd -- <dossier>  # démonstration (47 vérifications)
 xvfb-run godot --path . --rendering-method gl_compatibility -s tests/perf_view.gd                  # mesures rendu
 xvfb-run godot --path . --rendering-method gl_compatibility -s tests/screenshot.gd -- <dossier>   # captures
 ```

@@ -11,11 +11,11 @@ const UI = preload("res://game/ui.gd")
 const FounderScreen = preload("res://game/founder_screen.gd")
 
 const TUTORIAL := [
-	"Faites glisser un doigt pour tourner la planète, pincez pour zoomer.",
-	"Touchez le village de votre peuple (marqueur le plus clair) pour l'observer.",
-	"Ouvrez « ◎ Manifestations religieuses » en bas et utilisez « Signe céleste » sur votre village.",
-	"Ouvrez « Affinités » en haut : activez une règle, ou réservez des naissances depuis la fiche d'un village.",
-	"Ouvrez le Journal : chaque événement indique sa cause. Le monde vit sans vous — à vous d'intervenir.",
+	"Tournez la planète : glissez un doigt (ou le bouton gauche de la souris). Zoomez : pincez (ou molette).",
+	"Touchez la bannière d'un village de votre peuple pour ouvrir sa fiche (nom, population, besoins, activité).",
+	"Ouvrez « Pouvoirs » à droite, choisissez la catégorie « Signes », puis « Signe céleste ». Touchez votre village et validez.",
+	"Ouvrez « Affinités » : activez une règle d'attribution, ou réservez des naissances depuis la fiche d'un village.",
+	"Ouvrez le « Journal » : chaque événement indique sa cause. Touchez ▶ pour laisser le monde vivre.",
 ]
 
 var cat
@@ -170,7 +170,9 @@ func _enter_play() -> void:
 	ui.set_world(world)
 	ui.set_play_visible(true)
 	state = "play"
-	set_speed(1)
+	rig.user_moved = false
+	# Le temps reste en pause pendant l'apprentissage initial.
+	set_speed(0 if tutorial_active() else 1)
 	var ps: Array = world.people_settlements(0)
 	if ps.size() > 0:
 		rig.focus_on(world.planet.pos[int(ps[0].cell)], 2.2)
@@ -250,10 +252,23 @@ func set_overlay(o: String) -> void:
 # ------------------------------------------------------------------ Sélection et pouvoirs
 
 func _cell_at(screen_pos: Vector2) -> int:
-	var p: Vector3 = rig.pick_direction(screen_pos)
+	var cam: Camera3D = rig.camera
+	var p: Vector3 = view.ray_hit(cam.project_ray_origin(screen_pos), cam.project_ray_normal(screen_pos))
 	if p == Vector3.ZERO:
 		return -1
-	return world.planet.nearest_cell(p)
+	var c: int = world.planet.nearest_cell(p)
+	# Toucher près d'une bannière sélectionne le village, même hors de sa cellule centrale.
+	if world.settlement_at(c).is_empty() or int(world.settlement_at(c).cell) != c:
+		var best := -1
+		var bd := 0.03
+		for st in world.alive_settlements():
+			var d: float = (world.planet.pos[int(st.cell)] - p.normalized()).length()
+			if d < bd:
+				bd = d
+				best = int(st.cell)
+		if best >= 0 and _power == "":
+			return best
+	return c
 
 func _on_tap(screen_pos: Vector2) -> void:
 	if state != "play" or ui.modal != null:
@@ -269,6 +284,13 @@ func _on_tap(screen_pos: Vector2) -> void:
 		var s: Dictionary = world.settlement_at(c)
 		if not s.is_empty() and int(s.people) == 0:
 			_tutorial_done(1)
+
+func focus_settlement(sid: int) -> void:
+	var st: Dictionary = world.settlements[sid]
+	rig.focus_on(world.planet.pos[int(st.cell)], 1.45)
+	view.highlight([int(st.cell)], Color(1, 1, 1, 0.3))
+	ui.close_modal()
+	ui.show_cell(int(st.cell))
 
 func focus_people(pid: int) -> void:
 	var ps: Array = world.people_settlements(pid)
@@ -298,14 +320,61 @@ func preview_at(cell: int) -> void:
 func confirm_power() -> void:
 	if _power == "" or _preview_cell < 0:
 		return
-	var r := Powers.apply(world, world.player_deity, _power, _preview_cell, _power_opts)
+	var pid := _power
+	var cells: Array = Powers.area(world, pid, _preview_cell)
+	var before := _effect_snapshot(cells)
+	var d: Dictionary = world.deities[world.player_deity]
+	var e0 := float(d.energy)
+	var r := Powers.apply(world, world.player_deity, pid, _preview_cell, _power_opts)
+	cancel_power()   # la cible est oubliée : une seconde validation ne relance rien
 	if r.ok:
 		_tutorial_done(2)
 		view.refresh(true)
+		view.pulse(cells, Color(1.0, 0.85, 0.35, 0.5))
 		ui.mark_dirty()
-	cancel_power()
-	if not r.ok:
-		ui.show_message("Impossible", [r.msg])
+		ui.refresh_hud(speed)
+		ui.show_toast("%s — énergie %.1f → %.1f (−%.1f)\n%s" % [r.msg, e0, float(d.energy), e0 - float(d.energy), _effect_diff(before, _effect_snapshot(cells), pid)])
+		# La fiche ouverte montre le village touché, mis à jour.
+		var hit: Array = Powers.settlements_in(world, cells)
+		if not hit.is_empty():
+			ui.show_cell(int(hit[0].cell))
+	else:
+		ui.show_toast("Impossible : " + str(r.msg), Color(1.0, 0.6, 0.45))
+
+## Valeurs observables de la zone (pour montrer l'effet réel d'un pouvoir).
+func _effect_snapshot(cells: Array) -> Dictionary:
+	var snap := {"height": 0.0, "moist": 0.0, "fert": 0.0, "setl": {}}
+	for c in cells:
+		snap.height += world.planet.height[int(c)]
+		snap.moist += world.planet.moisture[int(c)]
+		snap.fert += world.planet.fertility[int(c)]
+	for st in Powers.settlements_in(world, cells):
+		var mine := 0.0
+		var rel := str(world.peoples[0].religion)
+		mine = float(st.faith.get(rel, 0.0))
+		snap.setl[int(st.id)] = {"name": st.name, "pop": float(st.pop), "fervor": float(st.fervor), "share": mine, "status": st.statuses.keys()}
+	return snap
+
+func _effect_diff(a: Dictionary, b: Dictionary, pid: String) -> String:
+	var parts := []
+	var n := 1.0
+	if absf(b.height - a.height) > 0.001: parts.append("relief %+.2f" % (b.height - a.height))
+	if absf(b.moist - a.moist) > 0.001: parts.append("humidité %+.2f" % (b.moist - a.moist))
+	if absf(b.fert - a.fert) > 0.001: parts.append("fertilité %+.2f" % (b.fert - a.fert))
+	for id in b.setl:
+		var x: Dictionary = b.setl[id]
+		var y: Dictionary = a.setl.get(id, x)
+		var sp := []
+		if roundi(x.fervor * 100.0) != roundi(y.fervor * 100.0): sp.append("ferveur %.0f → %.0f %%" % [y.fervor * 100.0, x.fervor * 100.0])
+		if roundi(x.share * 100.0) != roundi(y.share * 100.0): sp.append("fidèles %.0f → %.0f %%" % [y.share * 100.0, x.share * 100.0])
+		if absf(x.pop - y.pop) > 0.5: sp.append("population %d → %d" % [int(y.pop), int(x.pop)])
+		for stt in x.status:
+			if not stt in y.status: sp.append("état « %s »" % world.cat.temporary[stt].name)
+		if sp.size() > 0: parts.append("%s : %s" % [x.name, ", ".join(sp)])
+	var delayed: Array = world.cat.powers[pid].get("delayed", [])
+	if delayed.size() > 0:
+		parts.append("conséquence différée dans %d an(s)" % int(delayed[0].after))
+	return "Effets : " + ("; ".join(parts) if parts.size() > 0 else "aucun changement mesurable ici")
 
 func cancel_power() -> void:
 	_power = ""
@@ -343,25 +412,55 @@ func on_log_opened() -> void:
 
 # ------------------------------------------------------------------ Tutoriel
 
+func tutorial_active() -> bool:
+	return world != null and not world.tutorial.get("skipped", false) and world.tutorial.done.size() < TUTORIAL.size()
+
 func _tutorial_done(step: int) -> void:
 	if world == null:
 		return
+	var was_active := tutorial_active()
 	if not step in world.tutorial.done:
 		world.tutorial.done.append(step)
+	_update_tutorial()
+	if was_active and not tutorial_active() and speed == 0:
+		set_speed(1)
+		ui.show_toast("Tutoriel terminé : le temps s'écoule. Pause et vitesses en haut à droite.")
+
+## Étape courante = première non faite.
+func tutorial_step() -> int:
+	for i in TUTORIAL.size():
+		if not i in world.tutorial.done:
+			return i
+	return -1
+
+func tutorial_next() -> void:
+	var st := tutorial_step()
+	if st >= 0:
+		_tutorial_done(st)
+
+func tutorial_skip() -> void:
+	world.tutorial["skipped"] = true
+	_update_tutorial()
+	if speed == 0:
+		set_speed(1)
+
+func tutorial_restart() -> void:
+	world.tutorial = {"step": 0, "done": [], "skipped": false}
+	rig.user_moved = false
+	set_speed(0)
 	_update_tutorial()
 
 func _update_tutorial() -> void:
 	if world == null:
 		return
 	if rig.user_moved and not 0 in world.tutorial.done and state == "play":
-		_tuto_timer += 0.25
-		if _tuto_timer > 1.5:
-			world.tutorial.done.append(0)
-	for i in TUTORIAL.size():
-		if not i in world.tutorial.done:
-			ui.set_tutorial("Tutoriel %d/%d — %s" % [i + 1, TUTORIAL.size(), TUTORIAL[i]])
-			return
-	ui.set_tutorial("")
+		world.tutorial.done.append(0)
+	if not tutorial_active():
+		ui.set_tutorial("")
+		return
+	var st := tutorial_step()
+	var pause_note := "\n(Le temps est en pause pendant l'apprentissage.)" if speed == 0 else ""
+	ui.set_tutorial("Tutoriel %d/%d — %s%s" % [st + 1, TUTORIAL.size(), TUTORIAL[st], pause_note])
 
 # ------------------------------------------------------------------ Sauvegarde
 

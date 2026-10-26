@@ -33,6 +33,21 @@ const NEEDS := {"defense": "Menace ou guerre", "magic_research": "Recherche magi
 static func empty_counts() -> Dictionary:
 	return {"none": 0.0, "magic": 0.0, "sword": 0.0, "both": 0.0}
 
+## Origine des porteurs d'affinité (comptes agrégés par établissement) :
+## {"magic": {"natural": n, "rule:Nom": n, "manual": n, "late": n, "creation": n}, "sword": {...}, "both": {...}}
+static func empty_sources() -> Dictionary:
+	return {"magic": {}, "sword": {}, "both": {}}
+
+static var _last_src := ""
+
+static func _add_src(s: Dictionary, affinity: String, src: String, amount: float) -> void:
+	if affinity == NONE:
+		return
+	if not s.has("aff_src"):
+		s["aff_src"] = empty_sources()
+	var d: Dictionary = s.aff_src[affinity]
+	d[src] = float(d.get(src, 0.0)) + amount
+
 static func empty_stats() -> Dictionary:
 	return {"divine_slots": 0, "divine_none": 0, "divine": {"magic": 0, "sword": 0, "both": 0},
 		"natural_slots": 0, "natural": {"none": 0, "magic": 0, "sword": 0}, "late": {"magic": 0, "sword": 0, "both": 0}}
@@ -69,7 +84,9 @@ static func resolve_births(world, s: Dictionary, n: int) -> Dictionary:
 		if is_divine_slot(counter, cfg):
 			world.stats_births.divine_slots += 1
 			s.births.divine_slots += 1
+			_last_src = ""
 			a = _divine_birth(world, s, cfg)
+			_add_src(s, a, _last_src, 1.0)
 			if a == NONE:
 				world.stats_births.divine_none += 1
 				s.births.divine_none += 1
@@ -84,6 +101,7 @@ static func resolve_births(world, s: Dictionary, n: int) -> Dictionary:
 			s.births.natural[a] += 1
 			if a != NONE:
 				_record(world, null, s, "natural", a, "Naissance naturelle (hasard)")
+				_add_src(s, a, "natural", 1.0)
 		s.aff[a] = float(s.aff[a]) + 1.0
 		result[a] += 1.0
 	return result
@@ -104,6 +122,7 @@ static func _divine_birth(world, s: Dictionary, cfg: Dictionary) -> String:
 				deity.affinities_granted += 1
 				_record(world, deity, s, "manual", o.affinity, "Ordre manuel du dieu")
 				_cleanup_orders(deity)
+				_last_src = "manual"
 				return o.affinity
 	# 2) Règles automatiques par priorité croissante.
 	var rules: Array = deity.rules.duplicate()
@@ -126,6 +145,7 @@ static func _divine_birth(world, s: Dictionary, cfg: Dictionary) -> String:
 		r.total = int(r.total) + 1
 		deity.affinities_granted += 1
 		_record(world, deity, s, "rule:" + str(r.name), r.result, reason)
+		_last_src = "rule:" + str(r.name)
 		return r.result
 	return NONE
 
@@ -240,6 +260,9 @@ static func grant_late(world, deity, s: Dictionary, affinity: String, count: int
 			break
 		s.aff[src] = float(s.aff[src]) - 1.0
 		s.aff[affinity] = float(s.aff[affinity]) + 1.0
+		_add_src(s, affinity, "late", 1.0)
+		if src != NONE and s.has("aff_src"):
+			_scale_src(s, src, (float(s.aff[src])) / maxf(float(s.aff[src]) + 1.0, 1.0))
 		deity.energy -= cost
 		done += 1
 	if done > 0:
@@ -256,6 +279,15 @@ static func apply_deaths(s: Dictionary, deaths: float) -> void:
 	var k := clampf(1.0 - deaths / total, 0.0, 1.0)
 	for a in ALL:
 		s.aff[a] = float(s.aff[a]) * k
+		if a != NONE:
+			_scale_src(s, a, k)
+
+static func _scale_src(s: Dictionary, affinity: String, k: float) -> void:
+	if not s.has("aff_src"):
+		return
+	var d: Dictionary = s.aff_src[affinity]
+	for src in d.keys():
+		d[src] = float(d[src]) * k
 
 ## Une partie de la population part fonder un nouvel établissement : les porteurs partent au prorata.
 static func split_counts(s: Dictionary, fraction: float) -> Dictionary:
@@ -264,6 +296,32 @@ static func split_counts(s: Dictionary, fraction: float) -> Dictionary:
 		out[a] = float(s.aff[a]) * fraction
 		s.aff[a] = float(s.aff[a]) - out[a]
 	return out
+
+## Origines emportées par les colons (même fraction).
+static func split_sources(s: Dictionary, fraction: float) -> Dictionary:
+	var out := empty_sources()
+	if not s.has("aff_src"):
+		return out
+	for a in out:
+		for src in s.aff_src[a]:
+			var v := float(s.aff_src[a][src]) * fraction
+			out[a][src] = v
+			s.aff_src[a][src] = float(s.aff_src[a][src]) - v
+	return out
+
+## Libellé lisible d'une origine.
+static func source_label(src: String) -> String:
+	if src == "natural":
+		return "naturelle (hasard de la naissance)"
+	if src == "manual":
+		return "divine — ordre manuel du dieu"
+	if src == "late":
+		return "divine — don tardif (Don d'affinité)"
+	if src == "creation":
+		return "divine — don à la création des fondateurs"
+	if src.begins_with("rule:"):
+		return "divine — règle « %s »" % src.substr(5)
+	return "inconnue"
 
 ## Historique agrégé (une ligne par année / établissement / source / résultat) pour rester compact.
 static func _record(world, deity, s: Dictionary, source: String, affinity: String, reason: String, count: int = 1) -> void:

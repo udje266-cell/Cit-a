@@ -45,6 +45,11 @@ Toute décision qui la contredit doit d'abord modifier ce fichier.
 
 | D35 | 2026-10-26 | Révision DA v4 : **low poly stylisé à facettes franches**. Terre : normale par face sur une grille 2× plus large (grands plans), lissage réduit, crêtes plus marquées ; objets : prismes et polyèdres à faces planes, couleur unie par volume ; eau lisse. Les facettes ne sont jamais obtenues par des couleurs par triangle. | Le rendu lissé v3 était trop arrondi. Bonus : −58 % de primitives de près. |
 
+| D36 | 2026-10-26 | Tutoriel : temps en pause pendant l'apprentissage initial ; étapes validées par les actions réelles (geste, sélection, pouvoir, règle, journal) ; boutons « Étape suivante », « Passer », « Revoir » (menu). | Rendre la simulation compréhensible avant qu'elle n'avance. |
+| D37 | 2026-10-26 | Origine des affinités mémorisée par établissement (`aff_src` : naturelle, règle, ordre manuel, don tardif, création), proportionnelle aux morts et aux départs de colons. Les individus représentatifs tirent leur origine de ces comptes. Migration automatique des anciennes sauvegardes. | Exigence « origine naturelle ou divine, règle appliquée », sans abandonner la simulation agrégée. |
+| D38 | 2026-10-26 | Seuil de colonisation abaissé de 70 % à 55 % de la capacité du milieu. | Première colonie observable (≈ 150 ans au lieu de ≈ 200 chez les espèces lentes). |
+| D39 | 2026-10-26 | Pouvoirs jamais désactivés dans l'interface : un pouvoir indisponible reste touchable et explique pourquoi (niveau, XP, énergie, délai). Catégorie par défaut « Terrain », en-tête de catégorie, défilement vers l'onglet actif. | Pas d'infobulles au doigt ; catégorie active toujours lisible. |
+
 ## Hypothèses à confirmer par le commanditaire
 
 - Titre définitif du jeu (« Cit-a » = nom du dépôt, utilisé provisoirement).

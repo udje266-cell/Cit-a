@@ -23,7 +23,7 @@ func _init() -> void:
 		"test_birth_split", "test_natural_never_both", "test_natural_distribution",
 		"test_no_divine_attribution", "test_rule_attribution", "test_parents_both_not_inherited",
 		"test_genetics_never_touch_affinity", "test_late_grant", "test_manual_orders", "test_budget_limit",
-		"test_reload_no_reroll", "test_growth_bounded", "test_powers", "test_delayed_effect",
+		"test_reload_no_reroll", "test_affinity_origins", "test_growth_bounded", "test_powers", "test_delayed_effect",
 		"test_conversion", "test_weak_deity_return", "test_save_roundtrip", "test_save_files",
 		"test_migration_v0", "test_export_import", "test_offline", "test_benchmark",
 	]
@@ -275,6 +275,33 @@ func test_budget_limit() -> void:
 	Affinity.resolve_births(w, s, 60)
 	check(int(d.rules[0].total) == 2, "le budget annuel limite les attributions automatiques (%d)" % int(d.rules[0].total))
 	check(int(d.rules[0].blocked_budget) > 0, "les refus pour budget sont comptés")
+
+func test_affinity_origins() -> void:
+	var w = affinity_world()
+	var d: Dictionary = w.deities[w.player_deity]
+	d.rules = [Affinity.new_rule(0, "Élus", "both", [{"field": "always"}], 1, 1000), Affinity.new_rule(1, "Lames", "sword", [{"field": "always"}], 2, 1000)]
+	d.auto_budget = 100000.0
+	d.energy = 100000.0
+	var s := player_settlement(w)
+	s.faith = {str(w.peoples[0].religion): 1.0}
+	w.birth_counter = 0
+	Affinity.resolve_births(w, s, 600)
+	Affinity.apply_deaths(s, float(s.pop) * 0.3 + 100.0)
+	for a in ["magic", "sword", "both"]:
+		var tot := 0.0
+		for src in s.aff_src[a]:
+			tot += float(s.aff_src[a][src])
+		check(absf(tot - float(s.aff[a])) < 0.01, "origines de %s = effectif (%.2f / %.2f)" % [a, tot, float(s.aff[a])])
+	check(not s.aff_src.both.has("natural"), "aucune origine naturelle pour la double affinité")
+	check(s.aff_src.both.has("rule:Élus"), "la règle appliquée est mémorisée comme origine")
+	var inds: Array = Genetics.representatives(cat, s, "terragne", 40, 7)
+	var ok := true
+	for ind in inds:
+		if ind.affinity != "none" and ind.origin == "":
+			ok = false
+		if ind.affinity == "both" and ind.origin == "natural":
+			ok = false
+	check(ok, "chaque individu doté d'une affinité a une origine cohérente")
 
 func test_reload_no_reroll() -> void:
 	var w = make_world(77)

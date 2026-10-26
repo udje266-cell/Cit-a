@@ -165,8 +165,21 @@ static func representatives(cat, s: Dictionary, species_id: String, count: int, 
 			if r <= 0.0:
 				a = k
 				break
+		# Origine de l'affinité, tirée des comptes réels de l'établissement (naturelle, règle, ordre, don).
+		var origin := ""
+		if a != "none" and s.has("aff_src"):
+			var srcs: Dictionary = s.aff_src.get(a, {})
+			var tot := 0.0
+			for k in srcs:
+				tot += maxf(float(srcs[k]), 0.0)
+			var r2 := rng.randf() * tot
+			for k in srcs:
+				r2 -= maxf(float(srcs[k]), 0.0)
+				if r2 <= 0.0 and tot > 0.0:
+					origin = k
+					break
 		out.append({"name": make_name(rng, species_id), "age": int(rng.randf_range(0.05, 0.8) * longevity),
-			"traits": traits, "affinity": a,
+			"traits": traits, "affinity": a, "origin": origin,
 			"mastery_magic": float(s.mastery.magic) * rng.randf_range(0.5, 1.3) if a in ["magic", "both"] else 0.0,
 			"mastery_sword": float(s.mastery.sword) * rng.randf_range(0.5, 1.3) if a in ["sword", "both"] else 0.0,
 			"weapon_training": float(s.training) * rng.randf_range(0.5, 1.3)})

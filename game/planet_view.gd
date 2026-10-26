@@ -101,6 +101,12 @@ var _prop_mat: StandardMaterial3D
 var _grid_node: MeshInstance3D
 var highlight_instance: MeshInstance3D
 var _atmo: MeshInstance3D
+var show_names := false
+var show_borders := false
+var _labels := {}                # id d'établissement -> Label3D
+var _border_node: MeshInstance3D
+var _border_sig := ""
+var _pulse_left := 0.0
 var _cam_dir := Vector3.FORWARD
 var _cam_dist := 3.0
 
@@ -161,6 +167,16 @@ func setup(p_world) -> void:
 	highlight_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(highlight_instance)
 	_make_atmosphere()
+	_border_node = MeshInstance3D.new()
+	var bm := StandardMaterial3D.new()
+	bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	bm.vertex_color_use_as_albedo = true
+	bm.vertex_color_is_srgb = true
+	_border_node.material_override = bm
+	_border_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_border_node)
+	_labels = {}
+	_border_sig = ""
 	_snap_height = PackedFloat32Array()
 	_cell_overlay = PackedColorArray()
 	_village_sig = {}
@@ -1191,6 +1207,8 @@ func refresh(force: bool = false) -> void:
 	for g in prop_groups:
 		_build_props(g)
 	_build_villages()
+	_update_labels()
+	_update_borders()
 	_built_version = pl.version
 	last_build_ms = (Time.get_ticks_usec() - t0) / 1000.0
 
@@ -1232,3 +1250,126 @@ func update_view(cam_pos: Vector3) -> void:
 
 func vertex_count() -> int:
 	return g_pos.size()
+
+
+# ------------------------------------------------------------------ Repères : noms, frontières, retour visuel
+
+func set_names(on: bool) -> void:
+	show_names = on
+	_update_labels()
+
+func set_borders(on: bool) -> void:
+	show_borders = on
+	_border_sig = ""
+	_update_borders()
+
+func _update_labels() -> void:
+	var alive := {}
+	if show_names:
+		for vi in _villages:
+			var s: Dictionary = world.settlements[int(vi.id)]
+			var p: Dictionary = world.peoples[int(s.people)]
+			alive[int(vi.id)] = true
+			var lb: Label3D = _labels.get(int(vi.id))
+			if lb == null:
+				lb = Label3D.new()
+				lb.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+				lb.fixed_size = true
+				lb.pixel_size = 0.0011
+				lb.font_size = 26
+				lb.outline_size = 8
+				lb.outline_modulate = Color(0, 0, 0, 0.85)
+				lb.no_depth_test = false
+				add_child(lb)
+				_labels[int(vi.id)] = lb
+			lb.text = "%s · %d" % [s.name, int(s.pop)]
+			lb.modulate = Color(p.color[0], p.color[1], p.color[2]).lightened(0.35)
+			var c: Vector3 = vi.center
+			lb.position = c * (surface_radius(c, int(vi.cell)) + 0.035)
+	for id in _labels.keys():
+		if not alive.has(id):
+			_labels[id].queue_free()
+			_labels.erase(id)
+
+## Frontières : segments entre cellules de peuples différents, aux couleurs du peuple.
+func _update_borders() -> void:
+	if not show_borders:
+		_border_node.mesh = null
+		return
+	var pl = world.planet
+	var people := PackedInt32Array()
+	people.resize(pl.cell_count)
+	for i in pl.cell_count:
+		var o: int = world.owner[i]
+		people[i] = -1 if o < 0 else int(world.settlements[o].people)
+	var sig := str(hash(people))
+	if sig == _border_sig:
+		return
+	_border_sig = sig
+	var pts := PackedVector3Array()
+	var cols := PackedColorArray()
+	for i in pl.cell_count:
+		var pi := people[i]
+		if pi < 0:
+			continue
+		var ring: Array = _ring[i]
+		var col := Color(world.peoples[pi].color[0], world.peoples[pi].color[1], world.peoples[pi].color[2])
+		for k in ring.size():
+			var t0: int = ring[k]
+			var t1: int = ring[(k + 1) % ring.size()]
+			var other := -1
+			for q in 3:
+				var v: int = pl.tris[t0 * 3 + q]
+				if v != i and (pl.tris[t1 * 3] == v or pl.tris[t1 * 3 + 1] == v or pl.tris[t1 * 3 + 2] == v):
+					other = v
+			if other >= 0 and people[other] == pi:
+				continue
+			var a := _tri_point(t0) * 1.0025
+			var b := _tri_point(t1) * 1.0025
+			# Léger retrait vers l'intérieur : deux peuples voisins gardent chacun leur trait.
+			var ci: Vector3 = pl.pos[i]
+			pts.append(a.lerp(ci * a.length(), 0.08))
+			pts.append(b.lerp(ci * b.length(), 0.08))
+			cols.append(col)
+			cols.append(col)
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = pts
+	arr[Mesh.ARRAY_COLOR] = cols
+	var m := ArrayMesh.new()
+	if pts.size() > 0:
+		m.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arr)
+	_border_node.mesh = m
+
+## Retour visuel bref sur la zone touchée par un pouvoir.
+func pulse(cells: Array, color: Color) -> void:
+	highlight(cells, color)
+	_pulse_left = 1.6
+
+func _process(delta: float) -> void:
+	if _pulse_left > 0.0:
+		_pulse_left -= delta
+		if highlight_instance.mesh != null:
+			(highlight_instance.material_override as StandardMaterial3D).albedo_color = Color(1, 1, 1, clampf(_pulse_left / 1.6, 0.0, 1.0))
+		if _pulse_left <= 0.0:
+			highlight_instance.mesh = null
+			(highlight_instance.material_override as StandardMaterial3D).albedo_color = Color.WHITE
+
+## Point de la surface visé par un rayon (marche le long du rayon jusqu'au relief).
+func ray_hit(origin: Vector3, dir: Vector3) -> Vector3:
+	var b := origin.dot(dir)
+	var c := origin.dot(origin) - 1.12 * 1.12
+	var disc := b * b - c
+	if disc < 0.0:
+		return Vector3.ZERO
+	var t := -b - sqrt(disc)
+	var hint: int = world.planet.nearest_cell(origin + dir * t)
+	for i in 80:
+		var p := origin + dir * t
+		var d := p.normalized()
+		if i % 8 == 0:
+			hint = world.planet.nearest_cell(d)
+		if p.length() <= surface_radius(d, hint):
+			return p
+		t += 0.0025
+	return origin + dir * (-b - sqrt(maxf(b * b - (origin.dot(origin) - 1.0), 0.0)))

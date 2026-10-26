@@ -66,6 +66,7 @@ static func _settlement_year(w, s: Dictionary, cfg: Dictionary, fx: Dictionary) 
 	var sp: Dictionary = w.cat.species[p.species]
 	var st := stats_of(w, s)
 	var pop := float(s.pop)
+	s.prev_pop = pop
 	# Statuts temporaires.
 	for k in s.statuses.keys():
 		s.statuses[k] = int(s.statuses[k]) - 1
@@ -184,7 +185,7 @@ static func _update_territory(w, s: Dictionary) -> void:
 static func _try_expand(w, s: Dictionary, cfg: Dictionary, st: Dictionary, k: float) -> void:
 	var pop := float(s.pop)
 	var threshold := float(cfg.found_min_pop) * (0.7 + float(st.soc) * 0.6)
-	if pop < threshold or pop < 0.7 * k:
+	if pop < threshold or pop < 0.55 * k:
 		return
 	if w.people_settlements(int(s.people)).size() >= int(cfg.max_settlements_per_people):
 		return
@@ -217,6 +218,7 @@ static func _try_expand(w, s: Dictionary, cfg: Dictionary, st: Dictionary, k: fl
 	var moving := pop * frac
 	var ns: Dictionary = w._new_settlement(int(s.people), best, moving, Genetics.founder_effect(s.freqs, w.rng))
 	ns.aff = Affinity.split_counts(s, frac)
+	ns.aff_src = Affinity.split_sources(s, frac)
 	ns.faith = s.faith.duplicate()
 	ns.memory = s.memory.duplicate()
 	ns.fervor = s.fervor

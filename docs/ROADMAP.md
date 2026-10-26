@@ -33,6 +33,11 @@ lumière douce, halo, 3 niveaux de détail, interface mobile refaite (voir ART_D
 Prévu : contremarches plus nettes, effets visuels des pouvoirs, routes entre villages, ports, animation des
 habitants, construction initiale multi-fils.
 
+## Jalon 1c — Simulation compréhensible (✅ PC, 🟡 Android) — voir DEMO.md
+Tutoriel en pause avec gestes vérifiés, catégories de pouvoirs lisibles, explications des pouvoirs indisponibles,
+fiche de village complète, noms et frontières activables, origine des affinités, retour visuel des pouvoirs,
+démonstration pilotée par de vrais événements d'entrée (47 vérifications).
+
 ## Jalon 2 — Vérification et réglages (⬜ prochaine étape)
 1. ✅ Tests lancés et corrigés ; parcours complet vérifié sur PC.
 2. Réduire le coût d'un tick (8,5 ms sur PC, cible ≤ 4 ms sur mobile) et la construction visuelle initiale (3,4 s).

@@ -127,6 +127,7 @@ func _create_people(species_id: String, pname: String, founders: Array, deity_id
 	for f in founders:
 		var a: String = f.get("affinity", Affinity.NONE)
 		s.aff[a] = float(s.aff[a]) + 1.0
+		Affinity._add_src(s, a, "creation", 1.0)
 	s.faith = {str(rid): 1.0}
 	s.fervor = 0.8
 	s.memory = {str(deity_id): 1.0}
@@ -167,7 +168,8 @@ func _new_settlement(pid: int, cell: int, pop: float, freqs: Dictionary) -> Dict
 		"birth_acc": 0.0, "aff": Affinity.empty_counts(), "mastery": {"magic": 0.0, "sword": 0.0}, "training": 0.0,
 		"freqs": freqs, "faith": {}, "fervor": 0.5, "memory": {}, "statuses": {}, "stability": 0.6,
 		"food": pop * 2.0, "capacity": 10.0, "territory": [cell], "founded": year, "alive": true,
-		"last_gen": year, "last_help": -100, "births": Affinity.empty_stats(), "military": 0.0}
+		"last_gen": year, "last_help": -100, "births": Affinity.empty_stats(), "military": 0.0,
+		"aff_src": Affinity.empty_sources(), "prev_pop": pop}
 	settlements.append(s)
 	owner[cell] = id
 	return s
@@ -309,6 +311,9 @@ func from_dict(d: Dictionary) -> void:
 ## JSON ne distingue pas entiers et flottants : on retype les champs utilisés comme index.
 func _normalize_numbers() -> void:
 	for s in settlements:
+		if not s.has("aff_src"):
+			s["aff_src"] = Affinity.empty_sources()
+		s["prev_pop"] = float(s.get("prev_pop", s.pop))
 		for k in ["id", "people", "cell", "founded", "last_gen", "last_help"]:
 			s[k] = int(s[k])
 		s.territory = s.territory.map(func(c): return int(c))
