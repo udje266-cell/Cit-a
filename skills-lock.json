@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "godot-3d-essentials": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-3d-essentials/SKILL.md",
+      "computedHash": "69a6e8772960a710866ee46570b7218daf846b463a19d991d2232d919c4fb522"
+    },
+    "godot-gdscript": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-gdscript/SKILL.md",
+      "computedHash": "1faa18f58a46c2b45a89e4d3c2b0e6c6fe571dd1c353851ca9f56d02e85dd5b4"
+    },
+    "godot-nodes-scenes": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-nodes-scenes/SKILL.md",
+      "computedHash": "2d472883cc50896d09b4704058d302cd264b7a6cd90aec5d249e801d79cc4628"
+    },
+    "godot-resources": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-resources/SKILL.md",
+      "computedHash": "fc13e6f6dade249f436f99481688dfc89b1f995dad8d7c96f54af9cbfddf4db2"
+    },
+    "godot-signals-groups": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-signals-groups/SKILL.md",
+      "computedHash": "f1ff3ed55e1f7143e8c27d9eaaa1760e104232dad3d44c6959b1e97f18cb5064"
+    },
+    "router": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "router/SKILL.md",
+      "computedHash": "25bd6eeaba4941252cb15aa0e1ddf4f965079b6550e63bf0b0a276936b0acf96"
+    }
+  }
+}
