@@ -450,12 +450,14 @@ static func _politics(w, p: Dictionary) -> void:
 		w.add_log("%s devient un(e) %s" % [p.name, polity], "%d établissements" % n, "politics", int(p.origin_cell))
 		p.history.append({"year": w.year, "text": "Devient : %s." % polity})
 	# Scission : grand peuple instable.
+	# Le risque croît avec l'étendue (au-delà de 10 établissements) et l'instabilité : les empires finissent par se fragmenter.
 	if n >= 8 and w.year % 10 == 0:
 		var stab := 0.0
 		for s in list:
 			stab += float(s.stability)
 		stab /= n
-		if stab < 0.35 and w.rng.randf() < 0.5:
+		var risk := (0.5 if stab < 0.35 else 0.0) + maxf(0.0, float(n - 10) / 60.0) * (1.0 - stab)
+		if w.rng.randf() < risk:
 			_secede(w, p, list, stab)
 
 static func _secede(w, p: Dictionary, list: Array, stab: float) -> void:
@@ -475,7 +477,7 @@ static func _secede(w, p: Dictionary, list: Array, stab: float) -> void:
 		list[i].people = nid
 		w.tick_cache.erase("st%d" % int(list[i].id))
 	w.invalidate_settlements()
-	w.add_log("Sécession : %s" % np.name, "Peuple trop étendu et instable (stabilité moyenne %.0f %%)" % (stab * 100.0), "politics", int(np.origin_cell))
+	w.add_log("Sécession : %s" % np.name, "Peuple trop étendu (%d établissements) et instable (stabilité moyenne %.0f %%)" % [list.size(), stab * 100.0], "politics", int(np.origin_cell))
 	p.history.append({"year": w.year, "text": "Sécession de %s." % np.name})
 
 static func _relations(w) -> void:

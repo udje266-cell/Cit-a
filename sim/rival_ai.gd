@@ -68,6 +68,11 @@ static func _act(w, d: Dictionary) -> void:
 		if options.is_empty() and w.alive_settlements().size() > 0:
 			var any: Dictionary = w.alive_settlements()[w.rng.randi_range(0, w.alive_settlements().size() - 1)]
 			options.append([1.5, "murmure", int(any.cell), "reconquête"])
+	# Énergie presque pleine : la dépenser plutôt que la perdre (abondance, inspiration).
+	if float(d.energy) > 0.75 * float(d.max_energy) and not own.is_empty():
+		var o2: Dictionary = own[w.rng.randi_range(0, own.size() - 1)]
+		options.append([0.35 + float(pers.benevolence) * 0.2, "floraison", int(o2.cell), "abondance"])
+		options.append([0.3 + maxf(float(pers.magic_bias), 0.0) * 0.2, "revelation", int(o2.cell), "inspiration"])
 	options.sort_custom(func(a, b): return a[0] > b[0])
 	for o in options:
 		var pid: String = o[1]

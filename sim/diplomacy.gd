@@ -117,8 +117,10 @@ static func _pair(w, a: int, b: int) -> void:
 			r.trade = true
 			w.add_log("Accord commercial : %s et %s" % [pa.name, pb.name], "Ressources complémentaires (%s) et bonnes relations (%.2f)" % [", ".join(gives.slice(0, 3)), v], "diplomacy", int(pa.origin_cell))
 	if v > 0.3 and int(r.get("pact_until", -1)) < w.year:
+		var renewal: bool = int(r.get("pact_until", -1)) >= w.year - 2
 		r.pact_until = w.year + PACT_YEARS
-		w.add_log("Pacte de non-agression : %s et %s" % [pa.name, pb.name], "Relations cordiales (%.2f), pour %d ans" % [v, PACT_YEARS], "diplomacy", int(pa.origin_cell))
+		if not renewal:
+			w.add_log("Pacte de non-agression : %s et %s" % [pa.name, pb.name], "Relations cordiales (%.2f), pour %d ans, reconduit tant qu'elles le restent" % [v, PACT_YEARS], "diplomacy", int(pa.origin_cell))
 	if not r.alliance and v > 0.6:
 		r.alliance = true
 		r.allied_since = w.year

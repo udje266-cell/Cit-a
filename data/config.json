@@ -23,7 +23,7 @@
     "split_fraction": 0.3,
     "expansion_search_radius": 5,
     "expansion_max_visited": 80,
-    "max_settlements_per_people": 30,
+    "max_settlements_per_people": 60,
     "food_per_pop": 1.0,
     "research_scale": 0.06
   },

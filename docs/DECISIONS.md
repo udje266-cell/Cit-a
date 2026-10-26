@@ -77,3 +77,16 @@ Toute décision qui la contredit doit d'abord modifier ce fichier.
 - « Peuples » affiche la population par peuple, les fidèles par dieu et l'arbre des peuples (scissions, unions,
   disparitions) ; la fiche d'un peuple affiche ses affinités et l'évolution de ses traits.
 - Graphique dessiné par `_draw` (aucune dépendance). Captures : `docs/captures/graphes_*.png`.
+
+## D42 — Équilibrage sur 1000 ans (`tests/balance_report.gd`)
+Mesuré sur 3 graines (5, 42, 777), 1000 ans, 5 peuples au départ, sans intervention du joueur.
+
+| Constat avant | Correction | Après |
+|---|---|---|
+| Monde figé dès l'an 500 : chaque peuple bloqué à 30 établissements, aucune sécession | Plafond 60 ; risque de sécession croissant avec l'étendue (au-delà de 10) et l'instabilité | 20–22 sécessions, 6–14 unions, 42–72 conquêtes ; 10–18 peuples vivants à l'an 1000 |
+| Dieux rivaux à énergie pleine (260/260) sans rien faire | Au-delà de 75 % d'énergie, ils l'emploient (floraison, révélation) | — |
+| Journal saturé (271 « pactes ») : renouvellement journalisé tous les 25 ans | Reconduction silencieuse | 47 |
+
+Restent à traiter : tous les dieux atteignent le niveau maximal (5) vers l'an 400–500, la progression manque donc de
+paliers en fin de partie ; sans intervention, le peuple du joueur peut disparaître (conquis ou réuni), mais ses
+fidèles et son dieu continuent. Coût : ≈ 40 ms par an simulé avec ~15 peuples (absorbé par le découpage en tranches).
