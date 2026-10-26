@@ -1,5 +1,7 @@
 extends Control
 ## Interface tactile. Ne modifie la simulation qu'à travers les méthodes de main.gd (pouvoirs, règles, ordres).
+## Mise en page : barre d'état en haut, rail de navigation à droite, tiroir de pouvoirs en bas, panneaux latéraux.
+## Tout est placé dans une marge qui respecte la zone de sécurité de l'écran (encoches, coins arrondis).
 
 const Affinity = preload("res://sim/affinity.gd")
 const Genetics = preload("res://sim/genetics.gd")
@@ -8,27 +10,37 @@ const Faith = preload("res://sim/faith_system.gd")
 const Powers = preload("res://sim/powers.gd")
 const Planet = preload("res://sim/planet.gd")
 const PlanetView = preload("res://game/planet_view.gd")
+const Icons = preload("res://game/icons.gd")
 
-const FAMILY_ICONS := {"terrain": "⛰", "climate": "☁", "vegetation": "❀", "life": "✦", "evolution": "⧉", "affinity": "⚔✧",
-	"healing": "✚", "blessing": "☀", "inspiration": "✺", "sign": "◎", "catastrophe": "☄"}
+const ACCENT := Color(0.96, 0.76, 0.3)
+const BG := Color(0.07, 0.08, 0.14, 0.9)
+const RAIL_W := 104
 
 var main
 var world
-var top_label: Label
+var safe: MarginContainer
+var layout: Control
+var top_bar: PanelContainer
+var chips := {}
+var energy_bar: ProgressBar
 var speed_buttons := {}
+var speed_label: Label
+var rail: VBoxContainer
+var rail_buttons := {}
 var info_panel: PanelContainer
 var info_text: RichTextLabel
 var info_buttons: Container
+var drawer: PanelContainer
 var family_bar: HBoxContainer
 var power_bar: HBoxContainer
 var confirm_bar: PanelContainer
 var confirm_label: RichTextLabel
 var confirm_ok: Button
 var brush_toggle: CheckButton
+var tutorial_panel: PanelContainer
 var tutorial_label: Label
 var log_panel: PanelContainer
 var log_text: RichTextLabel
-var overlay_option: OptionButton
 var modal: Control
 var current_family := "sign"
 var selected_cell := -1
@@ -38,35 +50,105 @@ func build(p_main) -> void:
 	main = p_main
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var th := Theme.new()
-	th.default_font_size = 22
-	theme = th
+	theme = _make_theme()
+	safe = MarginContainer.new()
+	safe.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(safe)
+	layout = Control.new()
+	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	safe.add_child(layout)
 	_build_top_bar()
+	_build_rail()
 	_build_info_panel()
 	_build_power_bar()
 	_build_confirm_bar()
 	_build_log_panel()
-	tutorial_label = Label.new()
-	tutorial_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	tutorial_label.offset_left = -380
-	tutorial_label.offset_right = 380
-	tutorial_label.offset_top = 72
-	tutorial_label.offset_bottom = 140
-	tutorial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tutorial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tutorial_label.add_theme_color_override("font_color", Color(1, 0.92, 0.6))
-	tutorial_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	tutorial_label.add_theme_constant_override("outline_size", 6)
-	tutorial_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(tutorial_label)
+	_build_tutorial()
+	get_viewport().size_changed.connect(_apply_safe_area)
+	_apply_safe_area()
 	set_play_visible(false)
+
+## Marges = zone de sécurité de l'appareil convertie en coordonnées d'interface, + 8 px.
+func _apply_safe_area() -> void:
+	var win := Vector2(DisplayServer.window_get_size())
+	var vis := get_viewport().get_visible_rect().size
+	var m := {"left": 8.0, "top": 8.0, "right": 8.0, "bottom": 8.0}
+	if win.x > 0 and win.y > 0:
+		var sa := DisplayServer.get_display_safe_area()
+		var k := vis / win
+		m.left += maxf(sa.position.x, 0) * k.x
+		m.top += maxf(sa.position.y, 0) * k.y
+		m.right += maxf(win.x - sa.end.x, 0) * k.x
+		m.bottom += maxf(win.y - sa.end.y, 0) * k.y
+	for side in m:
+		safe.add_theme_constant_override("margin_" + side, int(m[side]))
+
+func _make_theme() -> Theme:
+	var th := Theme.new()
+	th.default_font_size = 20
+	var normal := _box(Color(0.14, 0.16, 0.26, 0.95), 10)
+	var hover := _box(Color(0.2, 0.23, 0.36, 0.95), 10)
+	var pressed := _box(ACCENT, 10)
+	var disabled := _box(Color(0.12, 0.13, 0.18, 0.7), 10)
+	for cls in ["Button", "OptionButton", "CheckButton", "CheckBox"]:
+		th.set_stylebox("normal", cls, normal)
+		th.set_stylebox("hover", cls, hover)
+		th.set_stylebox("pressed", cls, pressed)
+		th.set_stylebox("hover_pressed", cls, pressed)
+		th.set_stylebox("disabled", cls, disabled)
+		th.set_stylebox("focus", cls, _box(Color(0, 0, 0, 0), 10, ACCENT))
+		th.set_color("font_color", cls, Color(0.93, 0.94, 1.0))
+		th.set_color("font_pressed_color", cls, Color(0.1, 0.08, 0.04))
+		th.set_color("font_hover_pressed_color", cls, Color(0.1, 0.08, 0.04))
+		th.set_color("font_disabled_color", cls, Color(0.55, 0.57, 0.65))
+		th.set_color("icon_pressed_color", cls, Color(0.1, 0.08, 0.04))
+		th.set_color("icon_hover_pressed_color", cls, Color(0.1, 0.08, 0.04))
+	th.set_stylebox("panel", "PanelContainer", _box(BG, 14))
+	th.set_stylebox("background", "ProgressBar", _box(Color(0.2, 0.22, 0.32), 4))
+	th.set_stylebox("fill", "ProgressBar", _box(Color(0.45, 0.8, 1.0), 4))
+	th.set_font_size("font_size", "ProgressBar", 1)
+	return th
+
+func _box(col: Color, radius: int, border: Color = Color(0, 0, 0, 0)) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = col
+	sb.set_corner_radius_all(radius)
+	sb.content_margin_left = 10; sb.content_margin_right = 10; sb.content_margin_top = 6; sb.content_margin_bottom = 6
+	if border.a > 0.0:
+		sb.set_border_width_all(2)
+		sb.border_color = border
+	return sb
+
+func _panel_style(alpha: float = 0.9) -> StyleBoxFlat:
+	return _box(Color(BG.r, BG.g, BG.b, alpha), 14)
+
+func _button(text: String, cb: Callable, min_w: float = 0.0) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(min_w, 52)
+	b.pressed.connect(cb)
+	return b
+
+func _icon_button(icon: String, tip: String, cb: Callable, size: float = 52.0) -> Button:
+	var b := Button.new()
+	b.icon = Icons.get_icon(icon)
+	b.expand_icon = true
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.custom_minimum_size = Vector2(size, size)
+	b.tooltip_text = tip
+	b.pressed.connect(cb)
+	return b
 
 ## Le point écran est-il sur un élément d'interface visible ? (évite de tourner la planète en touchant un panneau)
 func blocks(pos: Vector2) -> bool:
 	if modal != null:
 		return true
+	for c in [top_bar, rail, drawer, info_panel, confirm_bar, log_panel]:
+		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(pos):
+			return true
 	for c in get_children():
-		if c is Control and c.visible and c != tutorial_label and c.mouse_filter != Control.MOUSE_FILTER_IGNORE and c.get_global_rect().has_point(pos):
+		if c != safe and c is Control and c.visible and c.mouse_filter != Control.MOUSE_FILTER_IGNORE and c.get_global_rect().has_point(pos):
 			return true
 	return false
 
@@ -77,74 +159,122 @@ func set_world(w) -> void:
 	_dirty = true
 
 func set_play_visible(v: bool) -> void:
-	for c in [top_label.get_parent().get_parent(), family_bar.get_parent().get_parent().get_parent(), tutorial_label]:
+	for c in [top_bar, rail, drawer, tutorial_panel]:
 		c.visible = v
 	info_panel.visible = false
 	confirm_bar.visible = false
 	log_panel.visible = false
 
-func _panel_style(alpha: float = 0.85) -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.07, 0.12, alpha)
-	sb.corner_radius_top_left = 10; sb.corner_radius_top_right = 10
-	sb.corner_radius_bottom_left = 10; sb.corner_radius_bottom_right = 10
-	sb.content_margin_left = 10; sb.content_margin_right = 10; sb.content_margin_top = 6; sb.content_margin_bottom = 6
-	return sb
-
-func _button(text: String, cb: Callable, min_w: float = 0.0) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.custom_minimum_size = Vector2(min_w, 52)
-	b.pressed.connect(cb)
-	return b
-
-# ------------------------------------------------------------------ Barre du haut
+# ------------------------------------------------------------------ Barre d'état et vitesse
 
 func _build_top_bar() -> void:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _panel_style())
-	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	add_child(panel)
+	top_bar = PanelContainer.new()
+	top_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top_bar.offset_bottom = 64
+	layout.add_child(top_bar)
 	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", 8)
-	panel.add_child(h)
-	top_label = Label.new()
-	top_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top_label.custom_minimum_size.x = 380
-	top_label.clip_text = true
-	h.add_child(top_label)
-	overlay_option = OptionButton.new()
-	for k in PlanetView.OVERLAYS:
-		overlay_option.add_item("Carte : " + PlanetView.OVERLAYS[k])
-		overlay_option.set_item_metadata(overlay_option.item_count - 1, k)
-	overlay_option.item_selected.connect(func(i): main.set_overlay(overlay_option.get_item_metadata(i)))
-	overlay_option.custom_minimum_size.y = 52
-	h.add_child(overlay_option)
-	for sp in [[0, "⏸"], [1, "▶"], [2, "▶▶"], [4, "▶▶▶"]]:
-		var b := _button(sp[1], main.set_speed.bind(sp[0]), 56)
+	h.add_theme_constant_override("separation", 6)
+	top_bar.add_child(h)
+	# Pastilles d'état (touchables : explication).
+	for c in [["year", "hourglass", "Année du monde"], ["energy", "bolt", "Énergie divine disponible / maximum"],
+			["faith", "flame", "Production de foi par an"], ["believers", "person", "Nombre de fidèles"]]:
+		var b := Button.new()
+		b.icon = Icons.get_icon(c[1])
+		b.expand_icon = false
+		b.flat = true
+		b.tooltip_text = c[2] + " — touchez pour une explication"
+		b.custom_minimum_size.y = 50
+		b.pressed.connect(show_explain.bind(c[0]))
+		h.add_child(b)
+		chips[c[0]] = b
+		if c[0] == "energy":
+			energy_bar = ProgressBar.new()
+			energy_bar.custom_minimum_size = Vector2(70, 10)
+			energy_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			energy_bar.show_percentage = false
+			energy_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			h.add_child(energy_bar)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(spacer)
+	speed_label = Label.new()
+	speed_label.custom_minimum_size.x = 110
+	speed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	h.add_child(speed_label)
+	var group := HBoxContainer.new()
+	group.add_theme_constant_override("separation", 2)
+	h.add_child(group)
+	for sp in [[0, "pause", "Pause"], [1, "play", "Vitesse normale (1 an/s)"], [2, "ff2", "Vitesse ×2"], [4, "ff3", "Vitesse ×4"]]:
+		var b := _icon_button(sp[1], sp[2], main.set_speed.bind(sp[0]), 50)
 		b.toggle_mode = true
 		speed_buttons[sp[0]] = b
-		h.add_child(b)
-	h.add_child(_button("Journal", _toggle_log))
-	h.add_child(_button("Affinités", show_affinity_rules))
-	h.add_child(_button("☰", show_game_menu, 56))
+		group.add_child(b)
 
 func update_speed(speed: int) -> void:
 	for k in speed_buttons:
 		speed_buttons[k].set_pressed_no_signal(k == speed)
+	speed_label.text = "En pause" if speed == 0 else "Vitesse ×%d" % speed
+	speed_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.45) if speed == 0 else Color(0.85, 0.9, 1.0))
+
+# ------------------------------------------------------------------ Rail de navigation
+
+func _build_rail() -> void:
+	rail = VBoxContainer.new()
+	rail.anchor_left = 1.0; rail.anchor_right = 1.0; rail.anchor_top = 0.0; rail.anchor_bottom = 1.0
+	rail.offset_left = -RAIL_W; rail.offset_right = 0; rail.offset_top = 72; rail.offset_bottom = -8
+	rail.add_theme_constant_override("separation", 6)
+	layout.add_child(rail)
+	for item in [["powers", "star", "Pouvoirs", _toggle_drawer], ["faith", "flame", "Foi", func(): show_deity(world.player_deity)],
+			["peoples", "people", "Peuples", show_peoples], ["affinity", "sword", "Affinités", show_affinity_rules],
+			["journal", "book", "Journal", _toggle_log], ["maps", "globe", "Cartes", show_overlays]]:
+		var b := Button.new()
+		b.icon = Icons.get_icon(item[1])
+		b.text = item[2]
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		b.expand_icon = false
+		b.add_theme_font_size_override("font_size", 16)
+		b.custom_minimum_size = Vector2(RAIL_W, 66)
+		b.pressed.connect(item[3])
+		rail.add_child(b)
+		rail_buttons[item[0]] = b
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rail.add_child(spacer)
+	var menu := _icon_button("menu", "Menu : sauvegarde, export, mondes", show_game_menu, 52)
+	menu.custom_minimum_size = Vector2(RAIL_W, 48)
+	rail.add_child(menu)
+
+func _build_tutorial() -> void:
+	tutorial_panel = PanelContainer.new()
+	tutorial_panel.add_theme_stylebox_override("panel", _box(Color(0.12, 0.1, 0.04, 0.85), 12, Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.6)))
+	tutorial_panel.anchor_left = 0.5; tutorial_panel.anchor_right = 0.5
+	tutorial_panel.offset_left = -330; tutorial_panel.offset_right = 330; tutorial_panel.offset_top = 72
+	tutorial_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.add_child(tutorial_panel)
+	tutorial_label = Label.new()
+	tutorial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tutorial_label.add_theme_color_override("font_color", Color(1, 0.93, 0.7))
+	tutorial_label.add_theme_font_size_override("font_size", 18)
+	tutorial_panel.add_child(tutorial_label)
+
+func set_tutorial(text: String) -> void:
+	tutorial_label.text = text
+	# Masqué quand un panneau occupe déjà l'écran, pour ne jamais recouvrir d'information.
+	tutorial_panel.visible = text != "" and top_bar.visible and not info_panel.visible and not log_panel.visible and not confirm_bar.visible
 
 # ------------------------------------------------------------------ Panneau d'information (sélection)
 
 func _build_info_panel() -> void:
 	info_panel = PanelContainer.new()
-	info_panel.add_theme_stylebox_override("panel", _panel_style())
 	info_panel.anchor_left = 1.0; info_panel.anchor_right = 1.0; info_panel.anchor_top = 0.0; info_panel.anchor_bottom = 1.0
-	info_panel.offset_left = -430; info_panel.offset_right = -8; info_panel.offset_top = 72; info_panel.offset_bottom = -170
-	add_child(info_panel)
+	info_panel.offset_left = -RAIL_W - 430; info_panel.offset_right = -RAIL_W - 8; info_panel.offset_top = 72; info_panel.offset_bottom = -158
+	layout.add_child(info_panel)
 	var v := VBoxContainer.new()
 	info_panel.add_child(v)
-	var close := _button("✕ Fermer", _close_info)
-	v.add_child(close)
+	v.add_child(_button("Fermer", _close_info))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -154,10 +284,8 @@ func _build_info_panel() -> void:
 	info_text.fit_content = true
 	info_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(info_text)
-
-	var flow := HFlowContainer.new()
-	v.add_child(flow)
-	info_buttons = flow
+	info_buttons = HFlowContainer.new()
+	v.add_child(info_buttons)
 
 func show_cell(cell: int) -> void:
 	selected_cell = cell
@@ -211,19 +339,19 @@ func refresh_info() -> void:
 		info_buttons.add_child(_button("Intervenir (affinités)", show_manual_affinity.bind(int(s.id))))
 	info_text.text = t
 
-# ------------------------------------------------------------------ Pouvoirs
+# ------------------------------------------------------------------ Pouvoirs (tiroir du bas)
 
 func _build_power_bar() -> void:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _panel_style())
-	panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	panel.offset_top = -160
-	add_child(panel)
+	drawer = PanelContainer.new()
+	drawer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	drawer.offset_top = -150
+	drawer.offset_right = -RAIL_W - 8
+	layout.add_child(drawer)
 	var v := VBoxContainer.new()
-	panel.add_child(v)
+	drawer.add_child(v)
 	var fs := ScrollContainer.new()
 	fs.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	fs.custom_minimum_size.y = 60
+	fs.custom_minimum_size.y = 58
 	v.add_child(fs)
 	family_bar = HBoxContainer.new()
 	fs.add_child(family_bar)
@@ -234,20 +362,35 @@ func _build_power_bar() -> void:
 	power_bar = HBoxContainer.new()
 	ps.add_child(power_bar)
 
+func _toggle_drawer() -> void:
+	drawer.visible = not drawer.visible
+	rail_buttons.powers.set_pressed_no_signal(drawer.visible)
+
+const FAMILY_ICONS := {"terrain": "mountain", "climate": "cloud", "vegetation": "leaf", "life": "heart", "evolution": "dna",
+	"affinity": "sword", "healing": "cross", "blessing": "sun", "inspiration": "bulb", "sign": "eye", "catastrophe": "bolt"}
+const FAMILY_SHORT := {"terrain": "Terrain", "climate": "Climat", "vegetation": "Végétation", "life": "Vie", "evolution": "Évolution",
+	"affinity": "Affinités", "healing": "Soins", "blessing": "Bénédictions", "inspiration": "Révélations", "sign": "Signes", "catastrophe": "Catastrophes"}
+
 func _rebuild_families() -> void:
 	for c in family_bar.get_children():
 		c.queue_free()
 	for fam in world.cat.power_families:
-		var b := _button(FAMILY_ICONS.get(fam, "•") + " " + world.cat.power_families[fam], _select_family.bind(fam))
+		var b := Button.new()
+		b.icon = Icons.get_icon(FAMILY_ICONS.get(fam, "star"))
+		b.text = FAMILY_SHORT.get(fam, fam)
+		b.tooltip_text = world.cat.power_families[fam]
 		b.toggle_mode = true
+		b.custom_minimum_size.y = 52
 		b.button_pressed = fam == current_family
+		b.set_meta("family", fam)
+		b.pressed.connect(_select_family.bind(fam))
 		family_bar.add_child(b)
 	_rebuild_powers()
 
 func _select_family(fam: String) -> void:
 	current_family = fam
 	for b in family_bar.get_children():
-		b.set_pressed_no_signal(b.text.ends_with(world.cat.power_families[fam]))
+		b.set_pressed_no_signal(b.get_meta("family", "") == fam)
 	_rebuild_powers()
 
 func _rebuild_powers() -> void:
@@ -259,25 +402,32 @@ func _rebuild_powers() -> void:
 		if p.family != current_family:
 			continue
 		var unlocked := Powers.is_unlocked(world, d, pid)
-		var label := "%s · %s" % [p.name, ("%.0f" % float(p.cost)) if pid != "don_affinite" else "variable"]
-		if not unlocked:
-			label = "🔒 %s (niveau %d)" % [p.name, int(p.unlock.get("level", 0))]
-		var b := _button(label, main.select_power.bind(pid))
-		b.disabled = not unlocked
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(0, 56)
+		if unlocked:
+			b.text = "%s  ·  %s" % [p.name, ("%.0f énergie" % float(p.cost)) if pid != "don_affinite" else "coût variable"]
+			b.icon = Icons.get_icon("bolt")
+			b.disabled = float(d.energy) < float(p.cost) and pid != "don_affinite"
+		else:
+			b.text = "%s  (niveau %d)" % [p.name, int(p.unlock.get("level", 0))]
+			b.icon = Icons.get_icon("lock")
+			b.disabled = true
 		b.tooltip_text = "%s\n%s" % [p.desc, p.interactions]
+		b.pressed.connect(main.select_power.bind(pid))
 		power_bar.add_child(b)
 	brush_toggle = CheckButton.new()
 	brush_toggle.text = "Pinceau"
+	brush_toggle.tooltip_text = "Glisser le doigt applique le pouvoir de terrain en continu"
 	brush_toggle.visible = current_family == "terrain"
 	brush_toggle.toggled.connect(main.set_brush)
 	power_bar.add_child(brush_toggle)
 
 func _build_confirm_bar() -> void:
 	confirm_bar = PanelContainer.new()
-	confirm_bar.add_theme_stylebox_override("panel", _panel_style(0.95))
-	confirm_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	confirm_bar.offset_left = -420; confirm_bar.offset_right = 420; confirm_bar.offset_top = -330; confirm_bar.offset_bottom = -170
-	add_child(confirm_bar)
+	confirm_bar.add_theme_stylebox_override("panel", _box(Color(0.06, 0.07, 0.12, 0.96), 14, Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.7)))
+	confirm_bar.anchor_left = 0.5; confirm_bar.anchor_right = 0.5; confirm_bar.anchor_top = 1.0; confirm_bar.anchor_bottom = 1.0
+	confirm_bar.offset_left = -400; confirm_bar.offset_right = 340; confirm_bar.offset_top = -318; confirm_bar.offset_bottom = -158
+	layout.add_child(confirm_bar)
 	var h := HBoxContainer.new()
 	confirm_bar.add_child(h)
 	confirm_label = RichTextLabel.new()
@@ -294,7 +444,7 @@ func show_targeting(pid: String) -> void:
 	var p: Dictionary = world.cat.powers[pid]
 	confirm_bar.visible = true
 	confirm_ok.disabled = true
-	confirm_label.text = "[b]%s[/b]\n%s\n[i]Touchez une région de la planète pour prévisualiser.[/i]" % [p.name, p.desc]
+	confirm_label.text = "[b]%s[/b]\n%s\n[i]Touchez une région de la planète pour prévisualiser la zone et le coût.[/i]" % [p.name, p.desc]
 
 func show_preview(pv: Dictionary, delayed: Array) -> void:
 	confirm_bar.visible = true
@@ -303,7 +453,7 @@ func show_preview(pv: Dictionary, delayed: Array) -> void:
 	if not delayed.is_empty():
 		t += "Conséquences différées : %s\n" % ", ".join(delayed.map(func(e): return "%s dans %d ans" % [e.t, int(e.after)]))
 	for wmsg in pv.warnings:
-		t += "[color=#ff9966]⚠ %s[/color]\n" % wmsg
+		t += "[color=#ff9966]Attention : %s[/color]\n" % wmsg
 	if not pv.ok:
 		t += "[color=#ff6666]%s[/color]" % pv.reason
 	confirm_label.text = t
@@ -315,10 +465,9 @@ func hide_targeting() -> void:
 
 func _build_log_panel() -> void:
 	log_panel = PanelContainer.new()
-	log_panel.add_theme_stylebox_override("panel", _panel_style(0.92))
 	log_panel.anchor_left = 0.0; log_panel.anchor_right = 0.0; log_panel.anchor_top = 0.0; log_panel.anchor_bottom = 1.0
-	log_panel.offset_left = 8; log_panel.offset_right = 560; log_panel.offset_top = 72; log_panel.offset_bottom = -170
-	add_child(log_panel)
+	log_panel.offset_left = 0; log_panel.offset_right = 540; log_panel.offset_top = 72; log_panel.offset_bottom = -158
+	layout.add_child(log_panel)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	log_panel.add_child(scroll)
@@ -330,6 +479,7 @@ func _build_log_panel() -> void:
 
 func _toggle_log() -> void:
 	log_panel.visible = not log_panel.visible
+	rail_buttons.journal.set_pressed_no_signal(log_panel.visible)
 	main.on_log_opened()
 	refresh_log()
 
@@ -355,25 +505,74 @@ func refresh_hud(speed: int, catching_up: String = "") -> void:
 	if world == null:
 		return
 	var d: Dictionary = world.deities[world.player_deity]
-	var txt := "An %d  ·  ⚡ %.1f / %.0f  ·  Foi +%.2f/an  ·  Fidèles %d  ·  Niveau %d" % [world.year, float(d.energy), float(d.max_energy), float(d.faith_rate), int(d.believers), int(d.level)]
+	chips.year.text = "An %d" % world.year
+	chips.energy.text = "%.0f / %.0f" % [float(d.energy), float(d.max_energy)]
+	chips.faith.text = "+%.2f/an" % float(d.faith_rate)
+	chips.believers.text = "%d" % int(d.believers)
+	energy_bar.max_value = float(d.max_energy)
+	energy_bar.value = float(d.energy)
 	if catching_up != "":
-		txt = catching_up
-	top_label.text = txt
-	update_speed(speed)
+		speed_label.text = catching_up
+	else:
+		update_speed(speed)
 	if _dirty:
 		_dirty = false
 		refresh_info()
 		refresh_log()
-		_rebuild_powers_if_level_changed(int(d.level))
+		_rebuild_powers_if_changed(int(d.level), int(float(d.energy)))
 
-var _last_level := -1
-func _rebuild_powers_if_level_changed(lvl: int) -> void:
-	if lvl != _last_level:
-		_last_level = lvl
+var _last_power_state := ""
+func _rebuild_powers_if_changed(lvl: int, energy: int) -> void:
+	var st := "%d_%d" % [lvl, energy]
+	if st != _last_power_state:
+		_last_power_state = st
 		_rebuild_powers()
 
-func set_tutorial(text: String) -> void:
-	tutorial_label.text = text
+## Explications accessibles des grandeurs affichées.
+func show_explain(topic: String) -> void:
+	var d: Dictionary = world.deities[world.player_deity]
+	match topic:
+		"year":
+			show_message("Le temps", ["Un tour de simulation = 1 an. Utilisez la pause et les vitesses en haut à droite.", "Pendant votre absence, le monde avance (8 h maximum)."])
+		"energy":
+			show_message("Énergie divine", ["Réserve dépensée par les pouvoirs et les dons d'affinité : %.1f sur %.0f." % [float(d.energy), float(d.max_energy)],
+				"Elle se remplit chaque année grâce à la foi produite par vos fidèles. Le maximum augmente avec votre niveau.",
+				"Sans fidèles, une étincelle se régénère lentement : vous pouvez toujours murmurer."])
+		"faith":
+			show_message("Production de foi", ["+%.2f énergie par an." % float(d.faith_rate), "Elle dépend du nombre de fidèles × leur ferveur × leurs temples.",
+				"Les miracles vus augmentent la ferveur ; les crises sans aide divine la font baisser."])
+		"believers":
+			show_message("Fidèles", ["%d personnes croient en vous, dans tous les peuples." % int(d.believers), "Une religion peut dépasser les frontières de votre peuple : elle se diffuse entre voisins."])
+
+func show_peoples() -> void:
+	var body := open_modal("Peuples du monde")
+	for p in world.peoples:
+		if p.extinct:
+			continue
+		var row := HBoxContainer.new()
+		var sw := ColorRect.new()
+		sw.color = Color(p.color[0], p.color[1], p.color[2])
+		sw.custom_minimum_size = Vector2(18, 40)
+		row.add_child(sw)
+		var l := Label.new()
+		l.text = "%s — %s, %d hab., %d villages · %s" % [p.name, p.polity, int(world.people_pop(int(p.id))), world.people_settlements(int(p.id)).size(), world.deities[int(p.deity)].name]
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.add_child(l)
+		row.add_child(_button("Voir", main.focus_people.bind(int(p.id))))
+		row.add_child(_button("Fiche", show_people.bind(int(p.id))))
+		body.add_child(row)
+
+func show_overlays() -> void:
+	var body := open_modal("Cartes thématiques")
+	body.add_child(_rich("Choisissez ce que la planète affiche. La grille des cellules de simulation n'apparaît qu'en mode « Grille »."))
+	for k in PlanetView.OVERLAYS:
+		var b := _button(PlanetView.OVERLAYS[k], func():
+			main.set_overlay(k)
+			close_modal())
+		b.toggle_mode = true
+		b.button_pressed = main.view.overlay == k
+		body.add_child(b)
 
 # ------------------------------------------------------------------ Fenêtres modales
 
@@ -381,7 +580,7 @@ func open_modal(title: String, wide: bool = false) -> VBoxContainer:
 	close_modal()
 	modal = Control.new()
 	modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(modal)
+	layout.add_child(modal)
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.5)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -401,7 +600,7 @@ func open_modal(title: String, wide: bool = false) -> VBoxContainer:
 	tl.add_theme_font_size_override("font_size", 28)
 	tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(tl)
-	h.add_child(_button("✕", close_modal, 60))
+	h.add_child(_icon_button("close", "Fermer", close_modal, 52))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -615,7 +814,7 @@ func _condition_row(r: Dictionary, cond: Dictionary) -> Control:
 		"population":
 			h.add_child(_choice(["<", ">="], ["<", "≥"], cond, "op"))
 			h.add_child(_number(cond, 1.0, " hab."))
-	h.add_child(_button("✕", _remove_condition.bind(r, cond), 52))
+	h.add_child(_icon_button("close", "Retirer la condition", _remove_condition.bind(r, cond), 48))
 	return h
 
 func _remove_condition(r: Dictionary, cond: Dictionary) -> void:
@@ -751,6 +950,6 @@ func show_main_menu(worlds: Array, exports: Array) -> void:
 	for path in exports:
 		body.add_child(_button(str(path).get_file(), main.import_world.bind(path)))
 	body.add_child(_rich("\n[i]Partage en ligne : non connecté dans cette version.[/i]"))
-	# Le menu principal ne se ferme pas avec ✕ : il faut choisir un monde.
+	# Le menu principal ne se ferme pas : il faut choisir un monde.
 	var close_btn: Button = modal.get_child(1).get_child(0).get_child(0).get_child(1)
 	close_btn.visible = false

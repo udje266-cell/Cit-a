@@ -57,6 +57,27 @@ adb install -r build/cit-a-debug.apk
 mettre en cache les statistiques par établissement (aujourd'hui recalculées plusieurs fois par tick) et calculer
 les conversions seulement entre voisins proches.
 
+## Vérifications de la refonte visuelle (0.2.0)
+Environnement réellement testé : **Linux x86-64 (conteneur cloud, 4 cœurs), Godot 4.4.1, rendu Compatibilité
+(OpenGL 3.3) en logiciel via Mesa llvmpipe sous Xvfb, 1280×720**. Aucun GPU, aucun téléphone, aucun émulateur.
+Les temps d'image ci-dessous sont donc ceux d'un rendu **logiciel** et ne préjugent pas d'un appareil Android.
+
+| Vérification | Résultat |
+|---|---|
+| Tests de simulation | ✅ 29/29, 343 assertions (simulation inchangée) |
+| Test de fumée (flux complet + 3 distances + 10 cartes + nouvelles fenêtres) | ✅ sans erreur |
+| Région de référence (côte, forêt, montagne, village) capturée avant/après à 3 distances | ✅ `tests/region_shots.gd` |
+| Raccords du terrain | ✅ par construction (sommets partagés calculés à l'identique) ; aucune fissure visible sur les captures |
+| Orientation des objets | ✅ base de chaque objet alignée sur la normale de la sphère, posée à la hauteur du terrain |
+| Construction initiale du monde visuel | 690–840 ms (une fois, au chargement) |
+| Modification locale du terrain | 25–40 ms (chunks touchés seulement) |
+| Primitives par image (ombres comprises) | loin 43 k · moyen 151 k · près 340 k |
+| Appels de dessin (interface 2D comprise) | loin 108 · moyen 206 · près 236 (avant optimisation : 219 / 409 / 299) |
+| Sommets du terrain | 118 854 ; mémoire statique 55 Mo ; vidéo 31 Mo |
+
+À vérifier sur Android : 60 i/s à distance moyenne (151 k primitives, ~200 appels) ; si nécessaire, réduire la
+densité de végétation (`_build_props`, 14 essais par triangle) ou fusionner les variantes d'arbres.
+
 ## Outils de l'environnement de développement (inspectés le 2026-10-26)
 | Élément | État |
 |---|---|

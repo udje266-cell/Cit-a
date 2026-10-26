@@ -7,7 +7,7 @@ signal tapped(screen_pos: Vector2)
 signal painted(screen_pos: Vector2)
 signal moved
 
-const MIN_DIST := 1.25
+const MIN_DIST := 1.12
 const MAX_DIST := 5.0
 const TAP_MAX_MOVE := 14.0
 const TAP_MAX_MS := 350
@@ -44,9 +44,19 @@ func _apply() -> void:
 	pitch = clampf(pitch, -1.45, 1.45)
 	distance = clampf(distance, MIN_DIST, MAX_DIST)
 	var dir := Vector3(cos(pitch) * sin(yaw), sin(pitch), cos(pitch) * cos(yaw))
-	camera.position = dir * distance
-	camera.look_at(Vector3.ZERO, Vector3.UP)
+	var north := Vector3(-sin(pitch) * sin(yaw), cos(pitch), -sin(pitch) * cos(yaw))
+	# De près, la caméra vise la surface et s'incline vers l'horizon ; de loin, elle vise le centre.
+	var nf := near_factor()
+	var target := dir * clampf(nf * 3.0, 0.0, 1.02)
+	var tilt := nf * 0.85
+	var height := distance - target.length()
+	camera.position = target + (dir * cos(tilt) - north * sin(tilt)) * height
+	camera.look_at(target, north if nf > 0.01 else Vector3.UP)
 	moved.emit()
+
+## 0 de loin, 1 au plus près.
+func near_factor() -> float:
+	return clampf((2.1 - distance) / (2.1 - MIN_DIST), 0.0, 1.0)
 
 func _rotate_by(delta: Vector2) -> void:
 	# Rotation plus lente quand on est proche : précision au niveau des villages.

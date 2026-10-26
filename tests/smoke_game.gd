@@ -41,6 +41,17 @@ func _run() -> void:
 	main.ui.show_manual_affinity(int(s.id))
 	main.ui.show_game_menu()
 	main.ui._toggle_log()
+	main.ui.show_peoples()
+	main.ui.show_overlays()
+	for t in ["year", "energy", "faith", "believers"]:
+		main.ui.show_explain(t)
+	main.focus_people(1)
+	for d in [3.2, 1.9, 1.2]:
+		main.rig.focus_on(main.world.planet.pos[int(s.cell)], d)
+		main.update_lod()
+		main.view.refresh()
+		await _frames(1)
+	main.set_overlay("grid")
 	main.ui.refresh_hud(1)
 	await _frames(3)
 	print(main.export_world("seed"))

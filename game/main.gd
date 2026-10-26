@@ -24,6 +24,7 @@ var world_id := ""
 var state := "menu"          # menu | founders | play | catchup
 var speed := 1
 var rig
+var sun: DirectionalLight3D
 var view
 var ui
 var founder_screen
@@ -46,18 +47,27 @@ func _ready() -> void:
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.03, 0.04, 0.08)
+	e.background_color = Color(0.025, 0.03, 0.06)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.55, 0.6, 0.75)
-	e.ambient_light_energy = 0.55
+	e.ambient_light_color = Color(0.55, 0.62, 0.8)
+	e.ambient_light_energy = 0.38
+	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	e.tonemap_white = 4.0
+	e.tonemap_exposure = 0.95
 	env.environment = e
 	add_child(env)
-	var sun := DirectionalLight3D.new()
-	sun.rotation = Vector3(-0.6, 0.8, 0.0)
-	sun.light_energy = 1.1
-	add_child(sun)
 	rig = CameraRig.new()
 	add_child(rig)
+	# Soleil attaché à la caméra : la face observée est toujours éclairée, de biais (lecture des volumes).
+	sun = DirectionalLight3D.new()
+	sun.light_energy = 1.05
+	sun.light_color = Color(1.0, 0.96, 0.88)
+	sun.shadow_enabled = true
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+	sun.directional_shadow_max_distance = 2.5
+	sun.shadow_bias = 0.02
+	sun.rotation = Vector3(-0.55, -0.75, 0.0)
+	rig.camera.add_child(sun)
 	rig.tapped.connect(_on_tap)
 	rig.painted.connect(_on_paint)
 	view = PlanetView.new()
@@ -219,10 +229,14 @@ func _process(delta: float) -> void:
 		ui.refresh_hud(speed)
 		_update_tutorial()
 	_mesh_acc += delta
-	view.marker_detail = lerpf(1.6, 0.4, rig.zoom_level())
+	update_lod()
 	if _mesh_acc >= 1.0 or world.planet.version != view._built_version:
 		_mesh_acc = 0.0
 		view.refresh()
+
+func update_lod() -> void:
+	view.update_view(rig.camera.global_position)
+	sun.shadow_enabled = view.lod > 0   # ombres inutiles de loin : économie sur mobile
 
 func set_speed(s: int) -> void:
 	speed = s
@@ -253,6 +267,14 @@ func _on_tap(screen_pos: Vector2) -> void:
 		var s: Dictionary = world.settlement_at(c)
 		if not s.is_empty() and int(s.people) == 0:
 			_tutorial_done(1)
+
+func focus_people(pid: int) -> void:
+	var ps: Array = world.people_settlements(pid)
+	if ps.size() > 0:
+		rig.focus_on(world.planet.pos[int(ps[0].cell)], 1.9)
+		view.highlight([int(ps[0].cell)], Color(1, 1, 1, 0.35))
+		ui.show_cell(int(ps[0].cell))
+	ui.close_modal()
 
 func clear_selection() -> void:
 	view.highlight([], Color.WHITE)

@@ -27,6 +27,12 @@ plan, registre des décisions.
 Déjà présents en version simple (🟡) : diplomatie minimale (contact, relations, guerre, paix, alliance), conversions,
 sécessions, progression pendant l'absence avec résumé, tutoriel en 5 étapes, cartes thématiques (9).
 
+## Jalon 1b — Direction artistique et interface (✅ sur PC en rendu logiciel, 🟡 Android)
+Terrain continu low poly, océan à profondeur, plages, neige, végétation (11 variantes), villages par espèce et époque,
+bannières, habitants représentatifs, halo, 3 niveaux de détail, grille en mode consultation, interface refaite
+(zone de sécurité, barre d'état, vitesse, rail, tiroir de pouvoirs, explications). Prévu : effets visuels propres
+à chaque pouvoir, routes et ports, animation des habitants, variantes d'arbres par saison.
+
 ## Jalon 2 — Vérification et réglages (⬜ prochaine étape)
 1. ✅ Tests lancés et corrigés ; parcours complet vérifié sur PC.
 2. Réduire le coût d'un tick (8,5 ms sur PC, cible ≤ 4 ms sur mobile).
