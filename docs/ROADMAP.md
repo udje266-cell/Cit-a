@@ -27,12 +27,6 @@ plan, registre des décisions.
 Déjà présents en version simple (🟡) : diplomatie minimale (contact, relations, guerre, paix, alliance), conversions,
 sécessions, progression pendant l'absence avec résumé, tutoriel en 5 étapes, cartes thématiques (9).
 
-## Jalon 1b — Direction artistique et interface (✅ sur PC en rendu logiciel, 🟡 Android)
-Terrain continu low poly, océan à profondeur, plages, neige, végétation (11 variantes), villages par espèce et époque,
-bannières, habitants représentatifs, halo, 3 niveaux de détail, grille en mode consultation, interface refaite
-(zone de sécurité, barre d'état, vitesse, rail, tiroir de pouvoirs, explications). Prévu : effets visuels propres
-à chaque pouvoir, routes et ports, animation des habitants, variantes d'arbres par saison.
-
 ## Jalon 1b — Direction artistique et interface (✅ PC en rendu logiciel, 🟡 Android)
 Terrain doux en terrasses, palette limitée, végétation composée, famille architecturale, villages aménagés,
 lumière douce, halo, 3 niveaux de détail, interface mobile refaite (voir ART_DIRECTION.md, D27–D34).
@@ -41,7 +35,7 @@ habitants, construction initiale multi-fils.
 
 ## Jalon 2 — Vérification et réglages (⬜ prochaine étape)
 1. ✅ Tests lancés et corrigés ; parcours complet vérifié sur PC.
-2. Réduire le coût d'un tick (8,5 ms sur PC, cible ≤ 4 ms sur mobile).
+2. Réduire le coût d'un tick (8,5 ms sur PC, cible ≤ 4 ms sur mobile) et la construction visuelle initiale (3,4 s).
 3. Compiler l'APK et tester sur un Android milieu de gamme : gestes, lisibilité, IPS, mémoire.
 4. Équilibrage : rythme d'apparition des villages, revenus de foi, coûts des pouvoirs et des affinités.
 5. Enregistrer les mesures dans ARCHITECTURE.md (cibles initiales → mesurées).
