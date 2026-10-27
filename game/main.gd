@@ -47,6 +47,7 @@ var _tuto_timer := 0.0
 
 func _ready() -> void:
 	cat = Catalog.shared()
+	get_tree().set_quit_on_go_back(false)
 	I18n.apply(I18n.saved_locale(), cat)
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
@@ -120,7 +121,7 @@ func _start_founders() -> void:
 	view.setup(world)
 	state = "founders"
 	founder_screen = FounderScreen.new()
-	ui.add_child(founder_screen)
+	ui.layout.add_child(founder_screen)   # dans les marges de sécurité (encoches, barres système)
 	founder_screen.build(cat, 15.0)
 	founder_screen.confirmed.connect(_on_founders)
 
@@ -561,7 +562,41 @@ func export_world(kind: String) -> String:
 		return "Échec de l'export."
 	return tr("Fichier créé : %s\n(chemin réel : %s)") % [path, ProjectSettings.globalize_path(path)]
 
+## Touche « retour » d'Android : ferme ce qui est ouvert, du plus récent au plus ancien ; en partie, ouvre le menu.
+## Ne quitte l'application que depuis l'écran des mondes (après sauvegarde).
+func handle_back() -> String:
+	if state == "founders":
+		if founder_screen != null:
+			founder_screen.queue_free()
+			founder_screen = null
+		back_to_menu()
+		return "creation_annulee"
+	if state == "menu":
+		save_now()
+		get_tree().quit()
+		return "quitter"
+	if _power != "":
+		cancel_power()
+		return "pouvoir_annule"
+	if ui.modal != null:
+		ui.close_modal()
+		return "fenetre_fermee"
+	if ui.log_panel.visible:
+		ui._toggle_log()
+		return "journal_ferme"
+	if ui.info_panel.visible:
+		ui.info_panel.visible = false
+		return "fiche_fermee"
+	if ui.drawer.visible:
+		ui._toggle_drawer()
+		return "tiroir_ferme"
+	ui.show_game_menu()
+	return "menu_ouvert"
+
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		handle_back()
+		return
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		save_now()
 

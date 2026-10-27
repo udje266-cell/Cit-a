@@ -4,6 +4,7 @@ extends Control
 ## Tout est placé dans une marge qui respecte la zone de sécurité de l'écran (encoches, coins arrondis).
 
 const Affinity = preload("res://sim/affinity.gd")
+const TouchScroll = preload("res://game/touch_scroll.gd")
 const Genetics = preload("res://sim/genetics.gd")
 const Civ = preload("res://sim/civ_system.gd")
 const Faith = preload("res://sim/faith_system.gd")
@@ -376,6 +377,7 @@ func _build_info_panel() -> void:
 	info_panel.add_child(v)
 	v.add_child(_button("Fermer", _close_info))
 	var scroll := ScrollContainer.new()
+	TouchScroll.attach(scroll)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	v.add_child(scroll)
@@ -455,6 +457,7 @@ func _build_power_bar() -> void:
 	family_label.add_theme_font_size_override("bold_font_size", 17)
 	v.add_child(family_label)
 	var fs := ScrollContainer.new()
+	TouchScroll.attach(fs)
 	fs.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	fs.custom_minimum_size.y = 58
 	v.add_child(fs)
@@ -462,6 +465,7 @@ func _build_power_bar() -> void:
 	family_bar = HBoxContainer.new()
 	fs.add_child(family_bar)
 	var ps := ScrollContainer.new()
+	TouchScroll.attach(ps)
 	ps.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	ps.custom_minimum_size.y = 62
 	v.add_child(ps)
@@ -604,6 +608,7 @@ func _build_log_panel() -> void:
 	log_panel.offset_left = 0; log_panel.offset_right = 540; log_panel.offset_top = 72; log_panel.offset_bottom = -158
 	layout.add_child(log_panel)
 	var scroll := ScrollContainer.new()
+	TouchScroll.attach(scroll)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	log_panel.add_child(scroll)
 	log_text = RichTextLabel.new()
@@ -773,6 +778,7 @@ func open_modal(title: String, wide: bool = false) -> VBoxContainer:
 	h.add_child(tl)
 	h.add_child(_icon_button("close", "Fermer", close_modal, 52))
 	var scroll := ScrollContainer.new()
+	TouchScroll.attach(scroll)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	v.add_child(scroll)

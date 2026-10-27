@@ -4,6 +4,7 @@ extends PanelContainer
 signal confirmed(species_id: String, people_name: String, deity_name: String, founders: Array)
 
 const Affinity = preload("res://sim/affinity.gd")
+const TouchScroll = preload("res://game/touch_scroll.gd")
 const Genetics = preload("res://sim/genetics.gd")
 const POINTS := 10
 
@@ -44,10 +45,16 @@ func build(p_cat, initial_energy: float) -> void:
 	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cols.add_theme_constant_override("separation", 16)
 	root.add_child(cols)
-	# Colonne espèces
+	# Colonne espèces : défilante, pour que sa hauteur ne repousse jamais la barre de validation hors de l'écran.
+	var left_scroll := ScrollContainer.new()
+	TouchScroll.attach(left_scroll)
+	left_scroll.custom_minimum_size.x = 300
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cols.add_child(left_scroll)
 	var left := VBoxContainer.new()
-	left.custom_minimum_size.x = 330
-	cols.add_child(left)
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_scroll.add_child(left)
 	var sl := Label.new(); sl.text = "Espèce"; left.add_child(sl)
 	var group := ButtonGroup.new()
 	for id in cat.species_order:
@@ -64,7 +71,7 @@ func build(p_cat, initial_energy: float) -> void:
 	_species_desc = RichTextLabel.new()
 	_species_desc.bbcode_enabled = true
 	_species_desc.fit_content = true
-	_species_desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_species_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(_species_desc)
 	# Colonne fondateurs
 	var mid := VBoxContainer.new()
@@ -115,6 +122,7 @@ func _founder_tab(f: int) -> Control:
 	v.add_child(pl)
 	_points_labels.append(pl)
 	var scroll := ScrollContainer.new()
+	TouchScroll.attach(scroll)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	v.add_child(scroll)
