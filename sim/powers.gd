@@ -72,6 +72,8 @@ static func apply(w, did: int, pid: String, cell: int, opts: Dictionary = {}) ->
 			result_note = " (%d personnes)" % r
 	d.energy = float(d.energy) - spent
 	d.powers_used = int(d.powers_used) + 1
+	# Chaque intervention divine fait progresser (en plus des objectifs).
+	d.xp = int(d.xp) + int(w.cat.cfg("faith", "xp_per_power", 0))
 	for e in p.get("delayed", []):
 		w.pending.append({"due": w.year + int(e.after), "effect": e, "cells": cells, "deity": did, "power": pid})
 	var place := ""

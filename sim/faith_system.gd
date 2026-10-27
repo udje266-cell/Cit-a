@@ -144,7 +144,10 @@ static func _production(w, alive: Array, cfg: Dictionary) -> void:
 		d.believers = bel[id]
 		d.faith_rate = prod[id]
 		d.max_energy = float(cfg.base_max_energy) + float(cfg.max_energy_per_level) * int(d.level)
-		var e := float(d.energy) + float(prod[id])
+		# Revenu de base : un dieu qui a au moins un fidèle gagne toujours un peu d'énergie (début de partie jouable).
+		var base := float(cfg.get("base_income", 0.0)) if bel[id] >= 1.0 else 0.0
+		d.faith_rate = prod[id] + base
+		var e := float(d.energy) + float(prod[id]) + base
 		# Voie de retour : un dieu sans fidèles conserve une étincelle d'énergie.
 		if bel[id] < 10.0 and e < float(cfg.weak_regen_cap):
 			e = minf(e + float(cfg.weak_regen), float(cfg.weak_regen_cap))

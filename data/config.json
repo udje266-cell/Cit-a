@@ -29,6 +29,8 @@
   },
   "faith": {
     "faith_per_believer": 0.005,
+    "base_income": 0.5,
+    "xp_per_power": 3,
     "fervor_decay": 0.04,
     "conversion_rate": 0.03,
     "memory_decay": 0.01,

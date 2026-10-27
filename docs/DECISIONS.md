@@ -148,3 +148,13 @@ Purement visuel : la simulation n'en dépend pas (seul ajout : le champ `from` d
 - **Reste en français** : le journal et les explications produits par la simulation (événements, causes, raisons
   de blocage des découvertes), les noms de religions, quelques mots assemblés dans les fiches. Captures :
   `docs/captures/langue_anglais_*.png`.
+
+## D48 — Énergie et progression en début de partie (retour du commanditaire)
+Constat : avec 2 fondateurs, la foi produite valait ≈ +0,01 par an ; l'affichage arrondi restait sur « 15 / 60 »
+et donnait l'impression d'une énergie remise à zéro. La régénération de secours ne s'appliquait qu'en dessous de
+12 d'énergie (départ à 15). L'XP ne venait que des objectifs, vérifiés tous les 5 ans.
+- Revenu de base : +0,5 énergie par an pour tout dieu qui a au moins un fidèle (`faith.base_income`).
+- +3 XP par pouvoir utilisé (`faith.xp_per_power`) ; objectifs et niveau vérifiés chaque année.
+- Énergie affichée au dixième.
+- Mesure : 15,0 → 20,1 en 10 ans sans rien faire (avant : 15,1) ; niveau 1 après 4 pouvoirs (avant : jamais sans
+  objectif atteint). Tests : `test_energy_progression`.

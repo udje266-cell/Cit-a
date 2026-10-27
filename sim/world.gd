@@ -252,8 +252,7 @@ func tick_step(budget_usec: int) -> bool:
 			return false
 	RivalAI.tick(self)
 	History.tick(self)
-	if year % 5 == 0:
-		Faith.check_achievements(self)
+	Faith.check_achievements(self)
 	tick_cache.clear()
 	_phase = 0
 	tick_ms_last = (Time.get_ticks_usec() - _tick_t0) / 1000.0
