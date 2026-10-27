@@ -77,7 +77,15 @@ func _scroll_by(d: Vector2) -> void:
 	if scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 		scroll.scroll_horizontal += int(round(d.x))
 
-func _replay(press: InputEventMouseButton, release: InputEventMouseButton) -> void:
+func _replay(press0: InputEventMouseButton, release0: InputEventMouseButton) -> void:
+	# Les événements reçus ici sont en coordonnées d'interface ; Input les attend en coordonnées de fenêtre
+	# (différentes dès que l'interface est mise à l'échelle, c'est-à-dire sur presque tous les téléphones).
+	var xf := get_tree().root.get_final_transform()
+	var press: InputEventMouseButton = press0.duplicate()
+	var release: InputEventMouseButton = release0.duplicate()
+	for e in [press, release]:
+		e.position = xf * e.position
+		e.global_position = xf * e.global_position
 	_replaying += 1
 	Input.parse_input_event(press)
 	Input.flush_buffered_events()
